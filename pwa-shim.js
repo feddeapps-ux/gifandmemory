@@ -222,17 +222,67 @@
     if (t) { t.textContent = msg; t.classList.add("show"); setTimeout(function () { t.classList.remove("show"); }, 4000); }
     else { alert(msg); }
   }
+  /* Selector de cuenta DENTRO de la app: Google One Tap / FedCM (hoja nativa del propio Chrome, sin abrir otra página).
+     Si el navegador no puede mostrarla, se usa la ventana de Google de antes como respaldo. */
+  function pedirCredencialIntegrada() {
+    return cargarGIS().then(function () {
+      return new Promise(function (res, rej) {
+        if (!(window.google && google.accounts && google.accounts.id)) return rej(new Error("sin-integrado"));
+        var fin = false;
+        function ok(c) { if (!fin) { fin = true; res(c); } }
+        function no(m) { if (!fin) { fin = true; rej(new Error(m)); } }
+        try {
+          google.accounts.id.initialize({
+            client_id: C.GOOGLE_CLIENT_ID,
+            callback: function (r) { if (r && r.credential) ok(r.credential); else no("sin-integrado"); },
+            use_fedcm_for_prompt: true, auto_select: false, cancel_on_tap_outside: false, itp_support: true
+          });
+          google.accounts.id.prompt(function (n) {
+            try {
+              if (n.isDismissedMoment && n.isDismissedMoment()) {
+                var rz = n.getDismissedReason && n.getDismissedReason();
+                if (rz !== "credential_returned") no("Inicio cancelado.");
+              } else if ((n.isNotDisplayed && n.isNotDisplayed()) || (n.isSkippedMoment && n.isSkippedMoment())) {
+                no("sin-integrado");
+              }
+            } catch (e) { no("sin-integrado"); }
+          });
+        } catch (e) { no("sin-integrado"); }
+      });
+    });
+  }
+  /* Google mismo comprueba la firma del token (tokeninfo); además se exige que sea para ESTA app y que no esté vencido */
+  function verificarCredencial(jwt) {
+    return fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(jwt), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (t) {
+        var okAud = t && t.aud === C.GOOGLE_CLIENT_ID, okExp = t && Number(t.exp) * 1000 > Date.now() - 60000;
+        var okMail = t && t.email && (t.email_verified === true || t.email_verified === "true");
+        if (!okAud || !okExp || !okMail) throw new Error("No se pudo validar tu cuenta de Google.");
+        return { email: String(t.email).toLowerCase(), nombre: t.name || "", picture: t.picture || "" };
+      });
+  }
+  function irConGoogle(paginaDestino, r) {
+    var gp = b64urlEncode({ email: r.email, nombre: r.nombre || "", picture: r.picture || "" });
+    location.href = window.PWA_BASE + paginaDestino + ".html?gp=" + gp;
+  }
   function googleFlujo(paginaDestino, boton) {
     if (boton) boton.disabled = true;
-    pedirTokenGoogle()
-      .then(function (tok) { return llamar("pwaVerificarGoogleAcceso", [tok]); })
-      .then(function (r) {
-        var gp = b64urlEncode({ email: r.email, nombre: r.nombre || "", picture: r.picture || "" });
-        location.href = window.PWA_BASE + paginaDestino + ".html?gp=" + gp;
-      })
+    function falla(err) {
+      if (boton) boton.disabled = false;
+      toastSimple("Google: " + (err && err.message ? err.message : err));
+    }
+    function respaldoVentana() {
+      return pedirTokenGoogle()
+        .then(function (tok) { return llamar("pwaVerificarGoogleAcceso", [tok]); })
+        .then(function (r) { irConGoogle(paginaDestino, r); });
+    }
+    pedirCredencialIntegrada()
+      .then(verificarCredencial)
+      .then(function (r) { irConGoogle(paginaDestino, r); })
       .catch(function (err) {
-        if (boton) boton.disabled = false;
-        toastSimple("Google: " + (err && err.message ? err.message : err));
+        if (err && err.message === "sin-integrado") return respaldoVentana().catch(falla);
+        falla(err);
       });
   }
   document.addEventListener("click", function (ev) {

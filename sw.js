@@ -1,7 +1,7 @@
 /* GIF and Memory · service worker
    · La app (archivos de GitHub) se guarda en el teléfono y se actualiza sola en segundo plano.
    · Nunca toca las llamadas a tu servidor ni a Google: esas siempre van directo a internet. */
-const VERSION = "gm-pwa-v3";
+const VERSION = "gm-pwa-v4";
 const ARCHIVOS = ["go.html","config.js","pwa-shim.js","manifest.webmanifest","icon-192.png","icon-512.png","maskable-512.png","favicon.png","apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
