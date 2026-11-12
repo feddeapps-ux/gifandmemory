@@ -97,8 +97,33 @@
   /* ───────── google.script.run ───────── */
   var LOCAL = {
     // En la PWA no existe Google Play Billing: se usan los medios de pago normales
-    getPlayBillingActivo: function () { return false; }
+    getPlayBillingActivo: function () { return false; },
+    // La "dirección de la app" es la de la propia PWA (nunca la de script.google.com)
+    getWebAppUrl: function () { return window.PWA_APP_URL; }
   };
+
+  /* ───────── Todo se queda DENTRO de la PWA ─────────
+     Cualquier dirección del servidor de Apps Script (…script.google.com/macros/s/…/exec) que llegue en una
+     respuesta (links de redirección, "volver al inicio", etc.) se cambia por la de la PWA (go.html), que
+     reenvía a la página correcta (?page=index → index.html). Así nunca se abre la página externa con el sello. */
+  var RE_EXEC = /(?:https?:\/\/)?script\.google\.com\/(?:a\/macros\/[^\/\s"']+\/s|macros\/s)\/[\w-]+\/(?:exec|dev)/gi;
+  function aPWA(v) {
+    if (typeof v === "string") return v.indexOf("script.google.com") < 0 ? v : v.replace(RE_EXEC, window.PWA_APP_URL);
+    if (Array.isArray(v)) { for (var i = 0; i < v.length; i++) v[i] = aPWA(v[i]); return v; }
+    if (v && typeof v === "object") { Object.keys(v).forEach(function (k) { v[k] = aPWA(v[k]); }); return v; }
+    return v;
+  }
+  window.PWA_ADENTRO = aPWA;
+  /* Limpia direcciones viejas que quedaron guardadas en el teléfono (de antes de este arreglo) */
+  try {
+    for (var li = 0; li < localStorage.length; li++) {
+      var lk = localStorage.key(li), lv = localStorage.getItem(lk);
+      if (lv && lv.indexOf("script.google.com") >= 0 && lk.indexOf("mys_session") < 0) {
+        var nv = lv.replace(RE_EXEC, window.PWA_APP_URL);
+        if (nv !== lv) localStorage.setItem(lk, nv);
+      }
+    }
+  } catch (e) {}
 
   window.PWA_ERRORES = [];
   function registrarError(fn, err) {
@@ -117,7 +142,7 @@
       }).then(function (r) { return r.text(); }).then(function (txt) {
         var j;
         try { j = JSON.parse(txt); } catch (e) { throw new Error("Respuesta inválida del servidor."); }
-        if (j && j.ok) return j.result;
+        if (j && j.ok) return aPWA(j.result);
         throw new Error((j && j.error) || "Error del servidor.");
       }, function (err) {
         if (n < 1) return new Promise(function (r) { setTimeout(r, 700); }).then(function () { return intento(n + 1); });
