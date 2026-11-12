@@ -9,6 +9,52 @@
   var C = window.GM_CONFIG || {};
   var EXEC = C.EXEC_URL || "";
 
+
+  /* ───────── Pantalla IDÉNTICA a la app Android ─────────
+     El WebView de la app Android dibuja la página con un ancho de ~1000 px CSS (no 412) y la
+     reduce a la pantalla. Todo el diseño está medido para ese ancho. En un navegador/PWA normal
+     el ancho es ~412 px, y por eso se veía gigante. Aquí se copia el mismo ancho. */
+  var ANCHO = Number(C.ANCHO_PANTALLA) || 1020;
+  var VP = "width=" + ANCHO + ", user-scalable=no, viewport-fit=cover";
+  function sincronizarViewport() {
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) { vp = document.createElement("meta"); vp.name = "viewport"; (document.head || document.documentElement).appendChild(vp); }
+    if (vp.getAttribute("content") !== VP) vp.setAttribute("content", VP);
+  }
+  sincronizarViewport();
+  /* Cuánto hay que agrandar lo que dibuja la propia PWA (botón Instalar) para que se vea de tamaño normal
+     (la página mide ~1020 px y el celular la reduce a ~412) */
+  function escalaUI() {
+    var dw = screen.width || window.innerWidth;
+    return Math.max(1, window.innerWidth / dw);
+  }
+  document.addEventListener("DOMContentLoaded", sincronizarViewport);
+
+  /* ───────── Diagnóstico (abre la app con ?diag=1) ───────── */
+  var diagEl = null;
+  function mostrarDiag() {
+    if (!P.diag || !document.body) return;
+    if (!diagEl) {
+      diagEl = document.createElement("pre");
+      diagEl.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;margin:0;padding:" + (8 * escalaUI()) + "px;max-height:40%;overflow:auto;" +
+        "background:rgba(0,0,0,.85);color:#7dffb0;font:" + (11 * escalaUI()) + "px/1.3 monospace;white-space:pre-wrap";
+      document.body.appendChild(diagEl);
+    }
+    diagEl.textContent = "ancho=" + innerWidth + " dpr=" + devicePixelRatio + " pantalla=" + screen.width + "\n" + window.PWA_ERRORES.join("\n");
+  }
+  document.addEventListener("DOMContentLoaded", mostrarDiag);
+
+  /* Red de seguridad: ningún splash puede quedar tapando la app para siempre */
+  window.addEventListener("load", function () {
+    setTimeout(function () {
+      var sp = document.getElementById("splash-screen");
+      if (!sp || document.documentElement.classList.contains("gm-tr-espera")) return;
+      if (getComputedStyle(sp).display === "none") return;
+      sp.classList.add("hide");
+      setTimeout(function () { sp.style.display = "none"; }, 950);
+    }, 8000);
+  });
+
   /* ───────── Dirección base de la PWA (reemplaza ScriptApp.getService().getUrl()) ───────── */
   var dir = location.pathname.replace(/[^\/]*$/, "");
   window.PWA_BASE = location.origin + dir;
@@ -54,6 +100,10 @@
     getPlayBillingActivo: function () { return false; }
   };
 
+  window.PWA_ERRORES = [];
+  function registrarError(fn, err) {
+    try { window.PWA_ERRORES.push(fn + ": " + (err && err.message ? err.message : err)); mostrarDiag(); } catch (e) {}
+  }
   function llamar(fn, args) {
     if (Object.prototype.hasOwnProperty.call(LOCAL, fn)) {
       return Promise.resolve().then(function () { return LOCAL[fn].apply(null, args); });
@@ -90,6 +140,7 @@
           llamar(nombre, args).then(function (res) {
             if (typeof ok === "function") { try { ok.call(null, res, obj); } catch (e) { setTimeout(function () { throw e; }, 0); } }
           }, function (err) {
+            registrarError(nombre, err);
             if (typeof fail === "function") { try { fail.call(null, err, obj); } catch (e) { setTimeout(function () { throw e; }, 0); } }
             else { try { console.error("[PWA] " + nombre + ":", err && err.message); } catch (e) {} }
           });
@@ -181,6 +232,8 @@
       "font:700 13px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#fff;" +
       "background:linear-gradient(135deg,#a02fd8,#f0287f);box-shadow:0 4px 14px rgba(0,0,0,.35);";
     btn.addEventListener("click", instalar);
+    var k = escalaUI();
+    if (k > 1.01) { btn.style.transformOrigin = "top right"; btn.style.transform = "scale(" + k + ")"; btn.style.top = "calc(env(safe-area-inset-top,0px) + " + (8 * k) + "px)"; btn.style.right = (10 * k) + "px"; }
     document.body.appendChild(btn);
   }
   function mostrar() { crearBoton(); if (btn) btn.style.display = "inline-flex"; }
