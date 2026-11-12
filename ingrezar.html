@@ -1,0 +1,3439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta name="theme-color" content="#7b2fd0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GIF and Memory">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="config.js"></script>
+<script src="pwa-shim.js"></script>
+
+  <base target="_top">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+  
+<link rel="preconnect" href="https://i.imgur.com" crossorigin>
+<link rel="dns-prefetch" href="https://i.imgur.com">
+<link rel="preconnect" href="https://imgur.com" crossorigin>
+<link rel="dns-prefetch" href="https://imgur.com">
+
+<!-- Por si el logo viene desde Google (a veces pasa) -->
+<link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
+<link rel="dns-prefetch" href="https://lh3.googleusercontent.com">
+
+<title>Ingresar</title>
+
+  <!-- ==== Prevención de pinch-to-zoom (iOS + Android) ==== -->
+  <script>
+  (function () {
+    function onTouchStart(e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }
+    function onGestureStart(e) { e.preventDefault(); }
+
+    document.addEventListener('touchstart', onTouchStart, { passive: false });
+    document.addEventListener('touchmove', function(e) {
+      if (e.touches && e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('gesturestart', onGestureStart);
+
+    let lastTouch = 0;
+    document.addEventListener('touchend', function (e) {
+      const now = Date.now();
+      if (now - lastTouch <= 300) e.preventDefault();
+      lastTouch = now;
+    }, { passive: false });
+
+    window.addEventListener('unload', function () {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('gesturestart', onGestureStart);
+    });
+  })();
+  </script>
+
+  <style>
+    :root{
+      --top:#11112b;
+      --bg:#ffffff;
+      --card:#dfdff0;
+      --ink:#101018;
+      --muted:#6b7280;
+      --stroke:rgba(17,17,43,.18);
+      --shadow:0 14px 40px rgba(10,10,30,.12);
+      --radius:22px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      color:var(--ink);
+      background:linear-gradient(to bottom, var(--top) 0 380px, var(--bg) 380px 100%);
+      min-height:100vh;
+    }
+
+        /* Logo */
+    .brand{
+      position:fixed;
+      top:18px; left:18px;
+      display:flex; align-items:center; gap:10px;
+      z-index:10;
+    }
+
+    /* ✅ Logo SIN recorte, más grande y contorno limpio (igual a crearcuenta) */
+    .brand img{
+      width: clamp(88px, 7vw, 130px);
+      height: clamp(88px, 7vw, 130px);
+
+      /* clave: NO recortar */
+      object-fit: contain;
+
+      /* clave: no forzar círculo en el IMG (evita bordes “cortados”) */
+      border-radius: 0;
+
+      /* que se vea limpio con logos con transparencia */
+      background: transparent;
+
+      /* sombra “suave” sin recortar bordes */
+      box-shadow: none;
+      filter: drop-shadow(0 10px 22px rgba(0,0,0,.22));
+
+      /* ayuda a que el contorno se vea más suave en algunos móviles */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      image-rendering: auto;
+    }
+
+    /* Layout */
+    .wrap{
+      width:min(980px, 92vw);
+      margin:0 auto;
+      padding: 86px 0 64px;
+    }
+
+    .hero{
+      text-align:center;
+      color:#fff;
+      padding: 54px 0 34px;
+    }
+    .hero h1{
+      margin:0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight:700;
+      letter-spacing:.2px;
+      font-size: clamp(26px, 3.2vw, 46px);
+      line-height:1.08;
+      text-shadow:0 10px 24px rgba(0,0,0,.25);
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      box-shadow:var(--shadow);
+      border-radius: var(--radius);
+      padding: clamp(16px, 2.4vw, 26px);
+      margin: 10px auto 0;
+      width:min(780px, 100%);
+    }
+
+    .panel{
+      background:#fff;
+      border-radius: 18px;
+      padding: clamp(18px, 2.3vw, 26px);
+      border:1px solid rgba(0,0,0,.06);
+    }
+
+    .btn{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 14px 14px;
+      border-radius: 10px;
+      border:1px solid rgba(0,0,0,.14);
+      background:#fff;
+      font-weight:600;
+      cursor:pointer;
+      font-size: clamp(16px, 1.1vw, 18px);
+    }
+    .btn:active{ transform: translateY(1px); }
+
+    .googleG{
+      width:22px; height:22px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+      border-radius:6px;
+    }
+
+    .sep{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin: 18px 0 16px;
+      color:var(--muted);
+      font-weight:500;
+    }
+    .sep::before, .sep::after{
+      content:"";
+      height:1px;
+      flex:1;
+      background: rgba(0,0,0,.12);
+    }
+
+    label{
+      display:block;
+      font-weight:650;
+      margin: 14px 0 8px;
+      font-size: clamp(16px, 1.2vw, 18px);
+    }
+
+    .input{
+      width:100%;
+      padding: 16px 16px;
+      border-radius: 10px;
+      border: 2px solid rgba(0,0,0,.18);
+      outline:none;
+      font-size: clamp(18px, 1.2vw, 20px);
+    }
+    .input:focus{
+      border-color: rgba(17,17,43,.55);
+      box-shadow: 0 0 0 4px rgba(17,17,43,.10);
+    }
+
+    /* Password */
+    .passBlock{ margin-top:14px; display:none; }
+    .passWrap{ position:relative; }
+    .passWrap .input{ padding-right:52px; }
+
+    .passToggle{
+      position:absolute;
+      right:10px;
+      top:50%;
+      transform:translateY(-50%);
+      width:42px;
+      height:42px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,.14);
+      background:#fff;
+      cursor:pointer;
+      font-size:18px;
+    }
+
+    .primary{
+      margin-top: 18px;
+      background: var(--top);
+      color:#fff;
+      border: none;
+      padding: 16px 16px;
+      border-radius: 12px;
+      font-weight:800;
+      font-size: clamp(18px, 1.2vw, 20px);
+      cursor:pointer;
+      width:100%;
+    }
+
+    .below{
+      margin-top:14px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      align-items:center;
+      color:var(--muted);
+      font-weight:650;
+    }
+
+    .link{
+      color: var(--top);
+      font-weight:800;
+      cursor:pointer;
+      text-decoration: underline;
+      background: none;
+      border:none;
+      padding:0;
+      font-size: 14px;
+    }
+
+    .toast{
+      margin-top:12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(17,17,43,.06);
+      border: 1px solid rgba(17,17,43,.14);
+      display:none;
+      font-weight:600;
+    }
+    .toast.show{ display:block; }
+
+    /* ==========================================
+       MÓVIL: TODO GIGANTE (como tu crearcuenta)
+       ========================================== */
+    @media (max-width: 720px), (hover: none) and (pointer: coarse){
+      html{ -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+      body{
+        background:linear-gradient(to bottom, var(--top) 0 420px, var(--bg) 420px 100%);
+      }
+
+      .brand{ top: 12px; left: 12px; gap: 12px; }
+      .brand img{
+        width: clamp(120px, 24vw, 170px);
+        height: clamp(120px, 24vw, 170px);
+      }
+
+      .wrap{ width: min(980px, 94vw); padding: 140px 0 90px; }
+
+      .hero{ padding: 54px 0 26px; }
+      .hero h1{ font-size: 40px; line-height: 1.06; }
+
+      .card{ border-radius: 28px; padding: 26px; }
+      .panel{ border-radius: 22px; padding: 24px; }
+
+      label{ font-size: 26px; margin: 18px 0 12px; font-weight: 800; }
+
+      .input{ font-size: 28px; padding: 22px 18px; border-width: 2px; border-radius: 14px; }
+
+      .btn{ font-size: 24px; padding: 18px 16px; border-radius: 14px; font-weight: 900; }
+
+      .primary{ font-size: 34px; padding: 22px 18px; border-radius: 18px; }
+
+      .link{ font-size: 22px; }
+
+      .passToggle{ width: 62px; height: 62px; font-size: 26px; border-radius: 16px; }
+
+      .toast{ font-size: 22px; padding: 16px 16px; border-radius: 16px; }
+      .below{ font-size: 22px; }
+    }
+
+    /* Anti auto-zoom iOS: inputs >= 16px */
+    @media (hover: none) and (pointer: coarse){
+      input, select, textarea, button{ font-size: 16px; }
+    }
+
+    html, body{ touch-action: manipulation; }
+  
+    /* ============================================================
+       MODAL WEBVIEW — aviso para abrir en Chrome/Safari
+    ============================================================ */
+    #wvOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #wvOverlay.open { display: flex; }
+    #wvModal {
+      background: #fff;
+      border-radius: 22px;
+      padding: 30px 24px 26px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 16px 64px rgba(0,0,0,.45);
+      text-align: center;
+    }
+    #wvModal .wv-icon { font-size: 48px; margin: 0 0 10px; }
+    #wvModal .wv-title {
+      font-family: Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(20px, 4vw, 26px);
+      color: #11112b;
+      margin: 0 0 10px;
+      line-height: 1.2;
+    }
+    #wvModal .wv-body {
+      font-size: clamp(14px, 3.5vw, 16px);
+      color: #4b5563;
+      margin: 0 0 20px;
+      line-height: 1.55;
+    }
+    #wvModal .wv-url {
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: clamp(11px, 2.8vw, 13px);
+      color: #374151;
+      word-break: break-all;
+      margin: 0 0 18px;
+      font-family: monospace;
+      border: 1px solid rgba(0,0,0,.08);
+    }
+    #wvBtnCopiar {
+      width: 100%;
+      background: #11112b;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: clamp(16px, 3.5vw, 18px);
+      font-weight: 700;
+      cursor: pointer;
+      margin: 0 0 10px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity .15s;
+    }
+    #wvBtnCopiar:active { opacity: .8; }
+    #wvBtnCerrar {
+      width: 100%;
+      background: transparent;
+      color: #6b7280;
+      border: 1.5px solid rgba(0,0,0,.14);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: clamp(14px, 3vw, 16px);
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (max-width: 480px) {
+      #wvModal { padding: 28px 18px 22px; border-radius: 20px; }
+      #wvModal .wv-icon { font-size: 44px; }
+    }
+
+
+    /* ============================================================
+       MODAL RECUPERAR CONTRASEÑA
+    ============================================================ */
+    #rcOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 99998;
+      background: rgba(10,10,30,.78);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #rcOverlay.open { display: flex; }
+    #rcModal {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 30px 26px 26px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--stroke);
+      position: relative;
+    }
+    #rcModal .rc-inner {
+      background: #fff;
+      border-radius: 18px;
+      padding: 22px 20px;
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    #rcModal .rc-titulo {
+      font-family: Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(18px, 3.5vw, 22px);
+      color: var(--top);
+      margin: 0 0 6px;
+    }
+    #rcModal .rc-subtitulo {
+      color: var(--muted);
+      font-size: clamp(13px, 3vw, 15px);
+      margin: 0 0 16px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    #rcModal .rc-paso { display: none; }
+    #rcModal .rc-paso.activo { display: block; }
+    #rcBtnCerrar {
+      position: absolute;
+      top: 14px; right: 16px;
+      background: rgba(17,17,43,.08);
+      border: none;
+      border-radius: 50%;
+      width: 34px; height: 34px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1;
+      touch-action: manipulation;
+    }
+    #rcBtnCerrar:active { opacity: .7; }
+    .rc-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: clamp(13px, 3vw, 14px);
+      cursor: pointer;
+      padding: 0;
+      margin: 0 0 16px;
+      touch-action: manipulation;
+    }
+    .rc-back:active { opacity: .7; }
+    .rc-hint {
+      color: var(--muted);
+      font-size: clamp(12px, 2.8vw, 14px);
+      margin: 10px 0 0;
+    }
+    .rc-reenviar {
+      background: none; border: none;
+      color: var(--top); font-weight: 700;
+      font-size: clamp(12px, 2.8vw, 14px);
+      cursor: pointer; padding: 0;
+      text-decoration: underline;
+      touch-action: manipulation;
+    }
+    .rc-reenviar:disabled { color: var(--muted); cursor: default; text-decoration: none; }
+    .toast-rc {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(17,17,43,.06);
+      border: 1px solid rgba(17,17,43,.14);
+      display: none;
+      font-weight: 600;
+      font-size: clamp(13px, 3vw, 15px);
+    }
+    .toast-rc.show { display: block; }
+    @media (max-width: 720px), (hover: none) and (pointer: coarse) {
+      #rcOverlay { padding: 10px; align-items: center; }
+      #rcModal {
+        padding: 32px 20px 28px;
+        border-radius: 28px 28px 18px 18px;
+        max-width: 100%;
+        width: 100%;
+      }
+      #rcModal .rc-inner { padding: 26px 20px; border-radius: 20px; }
+      #rcModal .rc-titulo { font-size: 34px; margin: 0 0 10px; }
+      #rcModal .rc-subtitulo { font-size: 26px; margin: 0 0 20px; line-height: 1.45; }
+      #rcBtnCerrar { width: 52px; height: 52px; font-size: 26px; top: 18px; right: 20px; }
+      #rcModal label { font-size: 26px; margin: 18px 0 10px; font-weight: 800; }
+      #rcModal .input { font-size: 28px; padding: 22px 18px; border-radius: 14px; }
+      #rcModal .primary { font-size: 32px; padding: 22px 18px; border-radius: 18px; margin-top: 18px; }
+      #rcModal .passToggle { width: 60px; height: 60px; font-size: 26px; border-radius: 14px; }
+      .rc-back { font-size: 24px; margin: 0 0 20px; }
+      .rc-hint { font-size: 22px; margin: 14px 0 0; }
+      .rc-reenviar { font-size: 22px; }
+      .toast-rc { font-size: 22px; padding: 18px 16px; border-radius: 16px; }
+    }
+
+    /* ====== SPLASH UNIVERSAL ====== */
+    @keyframes splashFadeIn {
+      0%   { opacity: 0; transform: scale(0.88); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes splashFadeOut { to { opacity: 0; visibility: hidden; } }
+
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+      margin: 0;
+      touch-action: pan-y;
+      overscroll-behavior: none;
+    }
+    #splash-center {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 5mm;
+      box-sizing: border-box;
+    }
+    #splash-logo {
+      display: block;
+      animation: splashFadeIn 0.9s ease-out;
+      /* Tamaño por defecto (logo cuadrado/horizontal) */
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    /* Modo afiche: imagen más alta que ancha → cubre todo con 5mm borde */
+    #splash-logo.modo-afiche {
+      width:  calc(100vw - 10mm);
+      height: calc(100vh - 10mm);
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    #splash-screen.hide {
+      animation: splashFadeOut 0.9s ease forwards;
+      pointer-events: none;
+    }
+
+  </style>
+  <!-- ====== COLOR DINÁMICO (DISEÑO APLICACIÓN) ====== -->
+  <style id="colorBaseStyle">
+    :root { --color-base: #11112b; --color-base-alt: #1e1e4a; --color-base-card: #dfdff0; }
+  </style>
+  <script>
+  (function(){
+    var PAGE = "ingrezar";
+    var COLOR_FABRICA = "#11112b";
+    var KEY = "APP_COLOR_BASE_V1_" + PAGE;
+    function applyColor(color){
+      if(!color) return;
+      var style = document.getElementById("colorBaseStyle");
+      if(!style) return;
+      var hex = color.replace("#","");
+      if(hex.length!==6) return;
+      var r=parseInt(hex.slice(0,2),16), g=parseInt(hex.slice(2,4),16), b=parseInt(hex.slice(4,6),16);
+      var ra=Math.round(r*0.75), ga=Math.round(g*0.75), ba=Math.round(b*0.75);
+      var toH=function(n){return("0"+n.toString(16)).slice(-2);};
+      var alt="#"+toH(ra)+toH(ga)+toH(ba);
+      var rc=Math.round(r*0.18+255*0.82), gc=Math.round(g*0.18+255*0.82), bc=Math.round(b*0.18+255*0.82);
+      var card="#"+toH(rc)+toH(gc)+toH(bc);
+      style.textContent=":root{--color-base:"+color+";--color-base-alt:"+alt+";--color-base-card:"+card+";}";
+    }
+    try{
+      var cached=JSON.parse(localStorage.getItem(KEY)||"null");
+      if(cached && cached.color) applyColor(cached.color);
+    }catch(e){}
+    window.addEventListener("load",function(){
+      if(typeof google==="undefined"||!google.script||!google.script.run) return;
+      google.script.run
+        .withSuccessHandler(function(res){
+          var norm=function(s){return s.replace(/\s+/g,"").toLowerCase();};
+          var pageNorm=norm(PAGE);
+          var colorFinal="";
+          if(res&&res.ok&&res.reglas&&res.reglas.length){
+            for(var i=0;i<res.reglas.length;i++){
+              var r=res.reglas[i];
+              var pNorm=norm(String(r.paginas||"").trim());
+              var aplica=pNorm==="todas"||(pageNorm&&pNorm.split(",").map(function(p){return norm(p);}).indexOf(pageNorm)>=0);
+              if(aplica){ colorFinal=r.color; break; }
+            }
+          }
+          if(colorFinal){
+            // Hay color asignado para esta página → guardar y aplicar
+            try{localStorage.setItem(KEY,JSON.stringify({color:colorFinal,sig:res.signature,ts:Date.now()}));}catch(e){}
+            applyColor(colorFinal);
+          } else {
+            // No hay regla para esta página → restaurar color de fábrica y limpiar cache
+            try{localStorage.removeItem(KEY);}catch(e){}
+            applyColor(COLOR_FABRICA);
+          }
+        })
+        .withFailureHandler(function(){})
+        .getColorDiseño();
+    });
+  })();
+  </script>
+  <!-- ====== FIN COLOR DINÁMICO ====== -->
+  <!-- ====== OVERRIDE COLOR BASE ====== -->
+  <style>
+    /* Aplica el color dinámico a los elementos principales */
+    .primary, .cuenta-btn, .add-btn, #prodModalAddBtn,
+    .btn-guardar-dir, .btn-guardar-banco, .btn-guardar-form,
+    .btn.primary, .btn.success, #btnConfirmar, #rcBtnEnviar,
+    #rcBtnVerif, #rcBtnGuardar, .cg-btn-agregar,
+    #flayerBtnEnviar, #gbBtnSave, #cgBtnAgregar,
+    .lp-btn-confirmar, .prep-btn,
+    .catalog-menu-btn, #psToggle, #catGestionToggle,
+    .account-cta-btn, #btnDesplegarFlayer,
+    #gbBtnSave {
+      background: var(--color-base) !important;
+      border-color: var(--color-base) !important;
+    }
+    .catalog-menu-btn, #psToggle, #catGestionToggle, #btnDesplegarFlayer {
+      background: linear-gradient(135deg, var(--color-base) 0%, var(--color-base-alt) 100%) !important;
+    }
+    /* Textos con color primario */
+    .nav-item.active, .link { color: var(--color-base) !important; }
+    /* Bordes activos */
+    .option-label.selected, .dir-card.selected, .banco-card.selected,
+    .punto-item.selected { border-color: var(--color-base) !important; }
+    /* Fondos de cards de título */
+    .catalog-title, .cuenta-title, .miscompras-title,
+    .panel-title { background: var(--color-base-card) !important; }
+    /* Botones drawer */
+    .drawer-actions .primary { background: var(--color-base) !important; border-color: var(--color-base) !important; }
+    .drawer-actions button:not(.primary) { background: var(--color-base-card) !important; border-color: var(--color-base-card) !important; }
+    /* Radio dots activos */
+    .radio-dot::after, .dir-radio::after, .banco-radio::after,
+    .punto-dot::after { background: var(--color-base) !important; }
+    .option-label.selected .radio-dot,
+    .dir-card.selected .dir-radio,
+    .banco-card.selected .banco-radio,
+    .punto-item.selected .punto-dot { border-color: var(--color-base) !important; }
+    /* Input focus */
+    .field-input:focus, .field-select:focus, .cuenta-input:focus,
+    .descuento-input:focus { border-color: var(--color-base) !important; }
+    /* Carrusel dot activo */
+    .carrusel-dot.active, .cat-dot.active { background: var(--color-base) !important; }
+    /* Spinner */
+    .spinner { border-top-color: var(--color-base) !important; }
+    .gb-spin-ring { border-top-color: var(--color-base) !important; }
+    /* Scrollbar */
+    #catalogScrollWrap::-webkit-scrollbar-thumb,
+    #comprasScrollWrap::-webkit-scrollbar-thumb { background: var(--color-base) !important; }
+    /* GAS GameBoy */
+    #gbTable thead th, #gbTopBar, #gbBottomBar, #gbPanel {
+      background: var(--color-base) !important;
+    }
+    #gbTable thead th { background: linear-gradient(135deg, var(--color-base) 0%, var(--color-base-alt) 100%) !important; }
+    /* Led dots */
+    .lp-dot-ind.active { background: #fff; }
+    .lp-card-badge.efectivo { background: rgba(34,197,94,.12); color: #15803d; }
+    .lp-card-badge.pendiente { background: rgba(245,158,11,.12); color: #b45309; }
+    .lp-card-badge.pagado { background: rgba(59,130,246,.12); color: #1d4ed8; }
+    /* Confirm btn */
+    .confirm-btn-delete { background: #b91c1c !important; }
+    /* Input focus box-shadow */
+    .field-input:focus, .field-select:focus {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-base) 15%, transparent) !important;
+    }
+  </style>
+  <!-- ====== FIN OVERRIDE COLOR BASE ====== -->
+  <!-- ====== OVERRIDE --top ====== -->
+  <style>
+    :root { --top: var(--color-base); }
+  </style>
+</head>
+
+<body data-page="ingrezar">
+<script id="gmTransicionGuardiaJS">
+/* 🚪 TRANSICIÓN v2 — GUARDIA DE LA "PÁGINA FANTASMA" (bloque NUEVO, aditivo)
+   En el teléfono, al volver a index el sistema vuelve a abrir la página que
+   se acaba de dejar (ej. Carro) por ~2 s antes de mostrar index. Si esta
+   página se abre así —justo después de haberla dejado con la barra/menú—,
+   se mantiene su propio splash encima hasta que llega la página pedida
+   (o máximo 10 s). Una visita normal no cambia en nada. */
+(function(){
+  "use strict";
+  var PAG = "ingrezar";
+  window.__gmPag = PAG;
+  var K = "GM_TRANSICION_V1", de = document.documentElement;
+  // Limpieza: por si una copia guardada de la página trae restos de esto
+  try{ de.classList.remove("gm-tr-espera"); var v = document.getElementById("gmTransicionGuardiaCSS"); if (v && v.parentNode) v.parentNode.removeChild(v); }catch(e){}
+  var f = null;
+  try{
+    var a = null, b = null;
+    try{ a = JSON.parse(sessionStorage.getItem(K) || "null"); }catch(e){}
+    try{ b = JSON.parse(localStorage.getItem(K) || "null"); }catch(e){}
+    f = (a && b) ? ((a.t >= b.t) ? a : b) : (a || b);
+  }catch(e){}
+  if (!f || !f.t || (Date.now() - f.t) > 15000 || f.desde !== PAG || !f.hacia || f.hacia === PAG) return;
+  window.__gmTrFantasma = true;
+  try{
+    de.classList.add("gm-tr-espera");
+    var st = document.createElement("style");
+    st.id = "gmTransicionGuardiaCSS";
+    st.textContent = "html.gm-tr-espera #splash-screen{display:flex!important;opacity:1!important;visibility:visible!important;animation:none!important;z-index:2147483646!important;pointer-events:auto!important}";
+    (document.head || de).appendChild(st);
+  }catch(e){}
+  function soltar(){
+    try{ de.classList.remove("gm-tr-espera"); var s = document.getElementById("gmTransicionGuardiaCSS"); if (s && s.parentNode) s.parentNode.removeChild(s); }catch(e){}
+  }
+  window.__gmTrSoltar = soltar;
+  setTimeout(soltar, 10000);
+  try{ window.addEventListener("storage", function(e){ if (e && e.key === K && !e.newValue) soltar(); }); }catch(e){}
+})();
+</script>
+  <!-- SPLASH -->
+  <div id="splash-screen">
+    <div id="splash-bg-fx" aria-hidden="true">
+      <span class="splash-particle" style="left:8%;  --px:14px;  animation-duration:4.2s; animation-delay:.1s;"></span>
+      <span class="splash-particle" style="left:18%; --px:-18px; animation-duration:5.1s; animation-delay:.8s;"></span>
+      <span class="splash-particle" style="left:30%; --px:10px;  animation-duration:3.6s; animation-delay:.3s;"></span>
+      <span class="splash-particle" style="left:45%; --px:-12px; animation-duration:4.8s; animation-delay:1.1s;"></span>
+      <span class="splash-particle" style="left:58%; --px:16px;  animation-duration:4.0s; animation-delay:.5s;"></span>
+      <span class="splash-particle" style="left:70%; --px:-20px; animation-duration:5.4s; animation-delay:1.4s;"></span>
+      <span class="splash-particle" style="left:82%; --px:12px;  animation-duration:3.9s; animation-delay:.2s;"></span>
+      <span class="splash-particle" style="left:92%; --px:-10px; animation-duration:4.6s; animation-delay:.9s;"></span>
+    </div>
+    <div id="splash-center">
+      <div class="splash-orbit-icons" aria-hidden="true">
+        <!-- Libro digital -->
+        <svg class="splash-book-icon" width="52" height="52" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 14C27 10 18 9 10 11V46C18 44 27 45 32 49" stroke="#d4af37" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path class="splash-page" d="M32 14C37 10 46 9 54 11V46C46 44 37 45 32 49" stroke="#ffe9ad" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="32" y1="14" x2="32" y2="49" stroke="#d4af37" stroke-width="1.4" opacity=".5"/>
+        </svg>
+        <!-- Rompecabezas digital -->
+        <svg class="splash-puzzle-icon" width="52" height="52" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path class="splash-piece" d="M10 10H26C26 6 32 6 32 10H26V26H10V16C6 16 6 10 10 10Z" fill="#d4af37"/>
+          <path class="splash-piece" d="M32 10H48C52 10 52 16 48 16V26H32V10Z" fill="#ffe9ad"/>
+          <path class="splash-piece" d="M10 26H26V42C22 42 22 48 26 48H10V26Z" fill="#ffe9ad"/>
+          <path class="splash-piece" d="M32 26H48V42H48C52 42 52 48 48 48H32C32 44 36 44 36 40C36 36 32 36 32 32V26Z" fill="#d4af37"/>
+        </svg>
+      </div>
+      <img
+        id="splash-logo"
+        src="https://i.imgur.com/MHb7x08.png"
+        alt="SPLASH"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+      >
+      <div id="splashLoadingText">Los mejores regalos digitales para esa persona especial</div>
+      <div id="splashLoadingBar"><span></span></div>
+    </div>
+  </div>
+  <!-- Logo -->
+  <div class="brand" aria-label="Logo">
+    <img id="logo" src="https://i.imgur.com/MHb7x08.png" alt="Logo" loading="eager" decoding="async" fetchpriority="high" />
+  </div>
+
+  <div class="wrap" id="loginWrap">
+    <div class="hero" id="gmHero">
+      <!-- Nube de cómic: el texto se teclea aquí de a 2 filas y al
+           terminar la nube completa se va, dejando solo el formulario. -->
+      <div class="gm-nube" id="gmNube" role="status" aria-live="polite">
+        <div class="gm-nube-txt" id="gmNubeTxt"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="panel">
+
+        <button class="btn" id="btnGoogleLogin" type="button">
+          <span class="googleG" aria-hidden="true"><svg viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg">
+            <path class="gG-azul"     d="M533.5 278.4c0-18.5-1.5-37.1-4.7-55.3H272.1v104.8h147c-6.1 33.8-25.7 63.7-54.4 82.7v68h87.7c51.5-47.4 81.1-117.4 81.1-200.2z"/>
+            <path class="gG-verde"    d="M272.1 544.3c73.4 0 135.3-24.1 180.4-65.7l-87.7-68c-24.4 16.6-55.9 26-92.6 26-71 0-131.2-47.9-152.8-112.3H28.9v70.1c46.2 91.9 140.3 149.9 243.2 149.9z"/>
+            <path class="gG-amarillo" d="M119.3 324.3c-11.4-33.8-11.4-70.4 0-104.2V150H28.9c-38.6 76.9-38.6 167.5 0 244.4l90.4-70.1z"/>
+            <path class="gG-rojo"     d="M272.1 107.7c38.8-.6 76.3 13.9 104.4 40.8l77.7-77.7C405 24.6 339.7-.8 272.1 0 169.2 0 75.1 58 28.9 150l90.4 70.1c21.5-64.5 81.8-112.4 152.8-112.4z"/>
+          </svg></span><span class="gm-btn-txt">Iniciar sesión<br>con Google</span>
+        </button>
+
+        <div class="sep">O ingresa tu e-mail o teléfono</div>
+
+        <label for="ident">E-mail o teléfono</label>
+        <input class="input" id="ident" type="text" placeholder="ejemplo@correo.com o +56 9 1234 5678" autocomplete="username">
+
+        <div class="passBlock" id="passBlock">
+          <label for="password">Contraseña</label>
+          <div class="passWrap">
+            <input class="input" id="password" type="password" placeholder="Tu contraseña" autocomplete="current-password">
+            <button class="passToggle" id="togglePass" type="button" aria-label="Ver contraseña">👁</button>
+          </div>
+        </div>
+
+        <button class="primary" id="btnContinuar">Continuar</button>
+
+        <div class="below">
+          <span>¿No tienes cuenta?</span>
+          <button class="link" id="goCrear" type="button">Crear cuenta</button>
+        </div>
+
+        <!-- ✅ NUEVO: enlace recuperar contraseña — solo se agrega, no se toca nada existente -->
+        <div class="below" style="margin-top:6px;">
+          <button class="link" id="goRecuperar" type="button">¿Olvidaste tu contraseña?</button>
+        </div>
+
+        <div class="toast" id="toast1"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL RECUPERAR CONTRASEÑA ===== -->
+  <div id="rcOverlay">
+    <div id="rcModal">
+      <button id="rcBtnCerrar" type="button" aria-label="Cerrar">✕</button>
+
+      <div class="rc-inner">
+
+        <!-- PASO 1: email -->
+        <div class="rc-paso activo" id="rcPaso1">
+          <p class="rc-titulo">Recuperar contraseña</p>
+          <p class="rc-subtitulo">Ingresa el e-mail con que te registraste y te enviaremos un código.</p>
+          <label for="rcEmail">Tu e-mail registrado</label>
+          <input class="input" id="rcEmail" type="email" placeholder="ejemplo@correo.com" autocomplete="email">
+          <button class="primary" id="rcBtnEnviar" type="button" style="margin-top:14px;">Enviar código</button>
+          <div class="toast-rc" id="rcToast1"></div>
+        </div>
+
+        <!-- PASO 2: código -->
+        <div class="rc-paso" id="rcPaso2">
+          <button class="rc-back" id="rcBack2" type="button">← Volver</button>
+          <p class="rc-titulo">Ingresa el código</p>
+          <p class="rc-subtitulo" id="rcSubtitulo2">Revisa tu correo. El código es válido por 10 minutos.</p>
+          <label for="rcCodigo">Código de 6 dígitos</label>
+          <input class="input" id="rcCodigo" type="text" placeholder="123456" maxlength="6" autocomplete="one-time-code" inputmode="numeric">
+          <button class="primary" id="rcBtnVerif" type="button" style="margin-top:14px;">Verificar código</button>
+          <p class="rc-hint">¿No llegó? <button class="rc-reenviar" id="rcBtnReenviar" type="button">Reenviar código</button></p>
+          <div class="toast-rc" id="rcToast2"></div>
+        </div>
+
+        <!-- PASO 3: nueva contraseña -->
+        <div class="rc-paso" id="rcPaso3">
+          <p class="rc-titulo">Nueva contraseña</p>
+          <p class="rc-subtitulo">Identidad verificada. Establece tu nueva contraseña.</p>
+          <label for="rcNewPass">Nueva contraseña</label>
+          <div class="passWrap">
+            <input class="input" id="rcNewPass" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" style="padding-right:52px;">
+            <button class="passToggle" id="rcToggle1" type="button" aria-label="Ver">👁</button>
+          </div>
+          <label for="rcNewPass2" style="margin-top:14px;">Repetir contraseña</label>
+          <div class="passWrap">
+            <input class="input" id="rcNewPass2" type="password" placeholder="Repite tu contraseña" autocomplete="new-password" style="padding-right:52px;">
+            <button class="passToggle" id="rcToggle2" type="button" aria-label="Ver">👁</button>
+          </div>
+          <button class="primary" id="rcBtnGuardar" type="button" style="margin-top:18px;">Guardar nueva contraseña</button>
+          <div class="toast-rc" id="rcToast3"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- Fin modal recuperar contraseña -->
+
+  <script>
+    const __GOOGLE_PREFILL__ = window.PWA_PREFILL;
+
+    const $ = (id) => document.getElementById(id);
+
+    function toast(el, msg){
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 4500);
+    }
+
+    // ============================================================
+    // ✅ SESIÓN (misma clave que usas en Index/CrearCuenta)
+    // ============================================================
+    const SESSION_KEY = "mys_session_v1";
+
+    function setSession(data){
+      try { localStorage.setItem(SESSION_KEY, JSON.stringify(data || {})); } catch(e) {}
+    }
+
+    let WEBAPP_EXEC = null;
+
+    /* ═══════════════════════════════════════════════════════════════════
+       ✅ ARREGLO (septiembre 2026) — LA DIRECCIÓN DE LA APP LA RESUELVE EL
+          SERVIDOR, YA NO SE ESCRIBE A MANO.
+
+       QUÉ ESTABA PASANDO: la dirección del despliegue estaba pegada a mano
+       en TRES lugares de este archivo y las tres habían quedado pegoteadas,
+       una encima de la otra, así:
+
+           "https://" + "https://script.google.com/.../exec" +
+           "script.google.com/.../exec?page=index"
+
+       Esa dirección no existe. Entonces, después de iniciar sesión
+       (con Google Y con correo y contraseña, porque las dos terminan aquí),
+       el teléfono intentaba viajar a esa dirección rota, la carga fallaba y
+       el WebView caía a la copia guardada del index que tiene en la bodega
+       — una copia grabada SIN sesión. Por eso se veía el index, pero sin
+       estar logueado.
+
+       AHORA: la dirección la entrega el propio servidor al armar la página.
+       Siempre apunta al despliegue vigente y no se vuelve a vencer nunca,
+       aunque vuelvas a desplegar la app.
+       ═══════════════════════════════════════════════════════════════════ */
+    const WEBAPP_URL_SERVIDOR = window.PWA_APP_URL;
+
+    function baseExec(){
+      // 1) La que ya venía pidiendo getWebAppUrl() al servidor (si llegó)
+      if (WEBAPP_EXEC && /^https:\/\//.test(WEBAPP_EXEC)) return WEBAPP_EXEC;
+      // 2) La que el servidor escribió al armar esta página
+      if (WEBAPP_URL_SERVIDOR && /^https:\/\//.test(WEBAPP_URL_SERVIDOR)) return WEBAPP_URL_SERVIDOR;
+      // 3) Último recurso: la dirección actual sin parámetros
+      try { return String(window.location.href).split("?")[0]; } catch(e){ return ""; }
+    }
+
+function redirectToIndex(){
+  const url = baseExec() + "?page=index&v=" + Date.now();
+  try { window.top.location.href = url; }
+  catch(e){ window.location.href = url; }
+}
+
+// ✅ RBAC: redirige al panel o al index según el rol devuelto por el servidor
+function redirectSegunRol(session, redirectTo){
+  const BASE = baseExec();
+  const page = (redirectTo === "paneldecontrol") ? "paneldecontrol" : "index";
+  const url  = BASE + "?page=" + page + "&v=" + Date.now();
+  try { window.top.location.href = url; }
+  catch(e){ window.location.href = url; }
+}
+
+function gotoCrearCuenta(){
+  const base = WEBAPP_EXEC || (window.location.href.split("?")[0]);
+  const url = base + "?page=crearcuenta&v=" + Date.now();
+  try { window.top.location.href = url; }
+  catch(e){ window.location.href = url; }
+}
+
+function normalizeUrl(u){
+  u = String(u || "").trim();
+  if (!u) return "";
+
+  // ✅ Corrige typos típicos (ej: "ohttps://")
+  u = u.replace(/^ohttps:\/\//i, "https://").replace(/^ohttp:\/\//i, "http://");
+
+  // soporta: www.xxx.cl, script.google.com/..., https://...
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u.replace(/^\/+/, "");
+  return u;
+}
+
+function goToUrl(url){
+  try { window.top.location.href = url; }
+  catch(e){ window.location.href = url; }
+}
+
+// ============================================================
+// ✅ NUEVO: Redirección post-login según celda B2 de
+//    "BOTONES DE REDIRECCION". No toca la lógica existente:
+//    si B2 tiene link => va ahí; si está vacía => destino por
+//    defecto (redirectSegunRol → index / panel).
+// ============================================================
+// null = aún no resuelto | "" = confirmado vacío | "https://..." = link
+var _LINK_REDIR_B2 = null;
+
+// ✅ Busca el puente nativo AndroidBridge probando cada fuente por separado.
+//    Clave: window.top.AndroidBridge puede lanzar SecurityError (cross-origin)
+//    desde el iframe de GAS. Aislando cada intento, si una fuente falla se
+//    prueba la siguiente y así SIEMPRE se encuentra el puente en la app.
+function _buscarAndroidBridge(){
+  try { if (window.AndroidBridge && typeof window.AndroidBridge.navegarA === "function") return window.AndroidBridge; } catch(e) {}
+  try { if (window.top && window.top.AndroidBridge && typeof window.top.AndroidBridge.navegarA === "function") return window.top.AndroidBridge; } catch(e) {}
+  try { if (window.parent && window.parent.AndroidBridge && typeof window.parent.AndroidBridge.navegarA === "function") return window.parent.AndroidBridge; } catch(e) {}
+  return null;
+}
+
+// ✅ Navegación robusta que evita el error de google.com.
+//    CLAVE: NUNCA navegar el iframe (window.location.href) hacia un sitio
+//    externo, porque Google (y muchos sitios) prohíben ser mostrados dentro
+//    de un frame => "rechazó la conexión". Siempre navegamos el TOP.
+//    Si el iframe de GAS bloquea la navegación automática por falta de
+//    "user activation", mostramos un botón para que el usuario toque 1 vez
+//    (un clic real SIEMPRE permite navegar el top) => 100% garantizado.
+function _navegarExterno(url){
+  // 1) App Android: puente nativo (el WebView navega directo, sin iframe)
+  var ab = _buscarAndroidBridge();
+  if (ab) { ab.navegarA(url); return; }
+
+  // Detectar si la navegación realmente ocurre (la página se descarga)
+  var _navego = false;
+  try {
+    window.addEventListener("pagehide", function(){ _navego = true; }, { once:true });
+  } catch(e) {}
+
+  // 2) Intento automático: navegar el TOP con un <a target="_top">.
+  //    Respeta <base target="_top"> y NO lanza el error cross-origin que
+  //    hacía caer al iframe. Si no hay "user activation", falla en silencio
+  //    (no rompe nada) y activamos el botón de respaldo más abajo.
+  try {
+    var a = document.createElement("a");
+    a.href = url;
+    a.target = "_top";
+    (document.body || document.documentElement).appendChild(a);
+    a.click();
+  } catch(e) {}
+  // Respaldo automático directo al top (jamás al iframe)
+  try { if (window.top && window.top !== window.self) window.top.location.assign(url); } catch(e) {}
+  try { if (window.top === window.self) window.location.assign(url); } catch(e) {}
+
+  // 3) Red de seguridad: si en ~1.3s seguimos aquí, mostrar botón "Continuar"
+  //    para que un toque real del usuario haga la navegación (garantizado).
+  setTimeout(function(){
+    if (_navego) return;
+    if (document.visibilityState === "hidden") return;
+    _mostrarBotonContinuar(url);
+  }, 1300);
+}
+
+// ✅ Botón/overlay de respaldo — un toque real del usuario navega el top
+//    con total garantía (fresh user activation). Solo aparece si el intento
+//    automático fue bloqueado por el iframe de GAS.
+function _mostrarBotonContinuar(url){
+  if (document.getElementById("redirOverlay")) return;
+  var ov = document.createElement("div");
+  ov.id = "redirOverlay";
+  ov.style.cssText = "position:fixed;inset:0;z-index:100000;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial;";
+
+  var t = document.createElement("div");
+  t.textContent = "Sesión iniciada ✅";
+  t.style.cssText = "font-size:24px;font-weight:800;color:#11112b;margin-bottom:8px;";
+
+  var s = document.createElement("div");
+  s.textContent = "Toca el botón para continuar.";
+  s.style.cssText = "font-size:17px;color:#6b7280;margin-bottom:24px;";
+
+  var a = document.createElement("a");
+  a.href = url;
+  a.target = "_top";
+  a.textContent = "Continuar";
+  a.style.cssText = "display:inline-block;background:var(--color-base,#11112b);color:#fff;font-size:22px;font-weight:800;text-decoration:none;padding:18px 48px;border-radius:16px;box-shadow:0 10px 30px rgba(10,10,30,.20);-webkit-tap-highlight-color:transparent;";
+  // Refuerzo por si el navegador ignora target del <a>
+  a.addEventListener("click", function(){
+    try { if (window.top && window.top !== window.self) window.top.location.assign(url); }
+    catch(e){ try { window.location.assign(url); } catch(e2){} }
+  });
+
+  ov.appendChild(t); ov.appendChild(s); ov.appendChild(a);
+  document.body.appendChild(ov);
+  try { a.focus(); } catch(e) {}
+}
+
+function irAlDestinoDespuesLogin(session, redirectTo){
+  // 1) Si ya sabemos el valor de B2 (prefetch), decidir al instante
+  if (_LINK_REDIR_B2 !== null) {
+    var u = normalizeUrl(_LINK_REDIR_B2);
+    if (u) return _navegarExterno(u);        // B2 tiene link → ir ahí
+    return redirectSegunRol(session, redirectTo); // B2 vacía → default (index)
+  }
+  // 2) Aún no resuelto → pedirlo al servidor y luego redirigir
+  if (google && google.script && google.script.run && google.script.run.getLinkBotonRedireccion) {
+    google.script.run
+      .withSuccessHandler(function(res){
+        var u = normalizeUrl(res && res.url);
+        if (u) _navegarExterno(u);
+        else   redirectSegunRol(session, redirectTo);
+      })
+      .withFailureHandler(function(){
+        redirectSegunRol(session, redirectTo);  // ante error → default, nunca se queda pegado
+      })
+      .getLinkBotonRedireccion();
+    return;
+  }
+  // 3) Sin acceso a GAS → default
+  redirectSegunRol(session, redirectTo);
+}
+
+function showPass(){
+      const pb = $("passBlock");
+      if (pb) pb.style.display = "block";
+    }
+
+    // ---------- Logo desde Sheets (A2) + cache localStorage + click “LOGO INICIO” ----------
+window.addEventListener("load", () => {
+  // ✅ Reutiliza el mismo cache que crearcuenta (así queda idéntico)
+  const KEY_URL = "cc_logo_url";
+  const KEY_SIG = "cc_logo_sig";
+
+  const LOGO_INICIO_URL = "cc_logo_inicio_url";
+  const LOGO_INICIO_SIG = "cc_logo_inicio_sig";
+
+  const logoEl = $("logo");
+
+  // 1) Pintar cache altiro (si existe) para instantáneo
+  const cachedLogo = localStorage.getItem(KEY_URL);
+  if (logoEl && cachedLogo) logoEl.src = cachedLogo;
+
+  // 2) Warm-up del src actual (fallback/cache)
+  try { const warm = new Image(); warm.src = logoEl ? logoEl.src : ""; } catch(e){}
+
+  // 3) Click del logo: si hay “LOGO INICIO” => va ahí; si no => Index
+  const bindLogoClick = () => {
+    const container = document.querySelector(".brand");
+    if (!container) return;
+
+    container.style.cursor = "pointer";
+
+    container.addEventListener("click", () => {
+      const cached = normalizeUrl(localStorage.getItem(LOGO_INICIO_URL));
+      if (cached) return goToUrl(cached);
+
+      if (google?.script?.run && google.script.run.getLinkLogoInicio) {
+        google.script.run.withSuccessHandler((res) => {
+          const url = normalizeUrl(res && res.url);
+
+          if (url) {
+            localStorage.setItem(LOGO_INICIO_URL, url);
+            localStorage.setItem(LOGO_INICIO_SIG, (res && res.signature) ? String(res.signature) : "");
+            goToUrl(url);
+          } else {
+            localStorage.removeItem(LOGO_INICIO_URL);
+            localStorage.removeItem(LOGO_INICIO_SIG);
+            redirectToIndex();
+          }
+        }).getLinkLogoInicio();
+
+        return;
+      }
+
+      redirectToIndex();
+    }, { passive: true });
+  };
+
+  bindLogoClick();
+
+  if (google?.script?.run) {
+    // 4) URL base del WebApp (si la usas en otros redirects)
+    google.script.run.withSuccessHandler((u) => { WEBAPP_EXEC = u; }).getWebAppUrl();
+
+    // 5) Logo (mismo que crearcuenta)
+    google.script.run.withSuccessHandler((res) => {
+      if (!res || !res.url || !logoEl) return;
+
+      const newUrl = String(res.url);
+      const newSig = (res.signature) ? String(res.signature) : "";
+      const oldSig = localStorage.getItem(KEY_SIG);
+
+      // ✅ Precarga antes de aplicar (evita parpadeo)
+      const pre = new Image();
+      pre.onload = () => {
+        localStorage.setItem(KEY_URL, newUrl);
+        localStorage.setItem(KEY_SIG, newSig);
+        logoEl.src = newUrl;
+      };
+      pre.onerror = () => {
+        localStorage.setItem(KEY_URL, newUrl);
+        localStorage.setItem(KEY_SIG, newSig);
+        logoEl.src = newUrl;
+      };
+      // Si no cambió la firma, igual asegura src correcto sin re-cachear
+      if (oldSig && oldSig === newSig) {
+        if (logoEl.src !== newUrl) logoEl.src = newUrl;
+        return;
+      }
+      pre.src = newUrl;
+    }).getLogoCrearCuenta();
+
+    // 6) Pre-cargar/actualizar “LOGO INICIO” en background (click instantáneo)
+    if (google.script.run.getLinkLogoInicio) {
+      google.script.run.withSuccessHandler((res) => {
+        const url = normalizeUrl(res && res.url);
+        const sig = (res && res.signature) ? String(res.signature) : "";
+        const old = localStorage.getItem(LOGO_INICIO_SIG);
+
+        if (!url) {
+          localStorage.removeItem(LOGO_INICIO_URL);
+          localStorage.removeItem(LOGO_INICIO_SIG);
+          return;
+        }
+
+        if (!old || old !== sig) {
+          localStorage.setItem(LOGO_INICIO_URL, url);
+          localStorage.setItem(LOGO_INICIO_SIG, sig);
+        } else {
+          if (!localStorage.getItem(LOGO_INICIO_URL)) localStorage.setItem(LOGO_INICIO_URL, url);
+        }
+      }).getLinkLogoInicio();
+    }
+
+    // 7) ✅ NUEVO: Prefetch del link de redirección (B2 de "BOTONES DE REDIRECCION")
+    //    para que al pinchar "Continuar" la decisión sea instantánea.
+    if (google.script.run.getLinkBotonRedireccion) {
+      google.script.run.withSuccessHandler((res) => {
+        _LINK_REDIR_B2 = (res && typeof res.url === "string") ? res.url.trim() : "";
+      }).withFailureHandler(() => {
+        // Si falla el prefetch, se resolverá en vivo al momento del login.
+      }).getLinkBotonRedireccion();
+    }
+  }
+
+  // ============================================================
+  // ✅ Si volvimos desde Google OAuth: loguear por email verificado
+  // ============================================================
+  if (__GOOGLE_PREFILL__ && __GOOGLE_PREFILL__.email) {
+    $("ident").value = __GOOGLE_PREFILL__.email;
+
+    if (!google?.script?.run) return;
+
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (!res || !res.ok) {
+          toast($("toast1"), (res && res.message) ? res.message : "No se pudo iniciar sesión con Google.");
+          return;
+        }
+        setSession(res.session);
+        toast($("toast1"), "Sesión iniciada ✅");
+        setTimeout(() => redirectSegunRol(res.session, res.redirectTo), 450);
+      })
+      .withFailureHandler((err) => {
+        toast($("toast1"), "Error: " + (err?.message || err));
+      })
+      .loginConGoogle(__GOOGLE_PREFILL__.email);
+  }
+
+  $("ident").focus();
+});
+// ---------- UI ----------
+    $("ident").addEventListener("focus", showPass);
+    $("ident").addEventListener("click", showPass);
+
+    // ✅ Enter en campo "ident" → mostrar contraseña y pasar el foco a ella
+    $("ident").addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      showPass();
+      const pb = $("passBlock");
+      if (pb) pb.style.display = "block";
+      setTimeout(() => { $("password").focus(); }, 50);
+    });
+
+    // ✅ Enter en campo "password" → ejecutar Continuar
+    $("password").addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      $("btnContinuar").click();
+    });
+
+    $("togglePass").addEventListener("click", () => {
+      const p = $("password");
+      if (!p) return;
+      p.type = (p.type === "password") ? "text" : "password";
+    });
+
+    $("goCrear").addEventListener("click", gotoCrearCuenta);
+
+    // ---------- Botón Google (OAuth real server-side) ----------
+
+    // ✅ Detecta WebView de apps (Facebook, Instagram, apps Android/iOS)
+    function isWebView() {
+      var ua = navigator.userAgent || "";
+      // Señales claras de WebView / navegador embebido
+      return (
+        /FBAN|FBAV|FB_IAB|Instagram|LinkedInApp|Twitter|Snapchat|TikTok/i.test(ua) ||
+        /wv/.test(ua) ||                        // Android WebView explícito
+        (/Android/i.test(ua) && !/Chrome\//i.test(ua) && !/Firefox\//i.test(ua)) || // Android sin Chrome/Firefox
+        (/(iPhone|iPod|iPad)/i.test(ua) && /AppleWebKit/i.test(ua) && !/Safari\//i.test(ua)) // iOS sin Safari
+      );
+    }
+
+    // ✅ Muestra modal con la URL para que el usuario la copie y abra en Chrome/Safari
+    function mostrarModalWebView(url) {
+      var overlay  = document.getElementById("wvOverlay");
+      var urlText  = document.getElementById("wvUrlText");
+      var btnCop   = document.getElementById("wvBtnCopiar");
+      var btnClose = document.getElementById("wvBtnCerrar");
+      if (!overlay) return;
+
+      if (urlText) urlText.textContent = url;
+
+      btnCop.onclick = function() {
+        try {
+          navigator.clipboard.writeText(url).then(function() {
+            btnCop.textContent = "✅ Enlace copiado";
+            setTimeout(function(){ btnCop.textContent = "📋 Copiar enlace"; }, 2500);
+          });
+        } catch(e) {
+          // fallback para navegadores sin clipboard API
+          var ta = document.createElement("textarea");
+          ta.value = url;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.focus(); ta.select();
+          try { document.execCommand("copy"); } catch(e2){}
+          document.body.removeChild(ta);
+          btnCop.textContent = "✅ Enlace copiado";
+          setTimeout(function(){ btnCop.textContent = "📋 Copiar enlace"; }, 2500);
+        }
+      };
+
+      btnClose.onclick = function() {
+        overlay.classList.remove("open");
+        $("btnGoogleLogin").disabled = false;
+      };
+
+      overlay.classList.add("open");
+    }
+
+    // ✅ Callbacks desde la app Android (Credential Manager nativo)
+    window.__onAndroidGoogleEmail = function(email) {
+      if (!email || !email.includes("@")) {
+        toast($("toast1"), "No se pudo obtener el correo de Google.");
+        $("btnGoogleLogin").disabled = false;
+        return;
+      }
+      if (!google?.script?.run) {
+        toast($("toast1"), "Error de conexion con el servidor.");
+        $("btnGoogleLogin").disabled = false;
+        return;
+      }
+      google.script.run
+        .withSuccessHandler((res) => {
+          $("btnGoogleLogin").disabled = false;
+          if (!res || !res.ok) {
+            toast($("toast1"), (res && res.message) ? res.message : "No se pudo iniciar sesion.");
+            return;
+          }
+          setSession(res.session);
+          toast($("toast1"), "Sesion iniciada con Google ✅");
+          // ✅ FIX ANDROID: window.top.location.href falla desde el iframe de GAS
+          // dentro del WebView. Se usa AndroidBridge.navegarA() para que sea
+          // el WebView quien navegue directamente. En web usa el fallback normal.
+          setTimeout(() => {
+            // Navegación por defecto (Android-aware): al index/panel interno.
+            // ⚠️ Se conserva intacta porque redirectSegunRol (window.top.location)
+            //    NO funciona dentro del WebView; por eso aquí se usa el puente.
+            const irADefault = () => {
+              const BASE = baseExec();
+              const page = (res.redirectTo === "paneldecontrol") ? "paneldecontrol" : "index";
+              const url  = BASE + "?page=" + page + "&v=" + Date.now();
+              // ✅ FIX: buscar AndroidBridge de forma robusta (aislando cada fuente)
+              const ab = _buscarAndroidBridge();
+              if (ab) { ab.navegarA(url); return; }
+              // fallback para navegador web normal
+              redirectSegunRol(res.session, res.redirectTo);
+            };
+
+            // ✅ NUEVO: obedecer B2 igual que el botón "Continuar".
+            //    Si B2 tiene link → ahí (_navegarExterno usa el puente en la app).
+            //    Si B2 está vacía → navegación por defecto de siempre.
+            const decidirB2 = (rawB2) => {
+              const u = normalizeUrl(rawB2);
+              if (u) _navegarExterno(u);
+              else   irADefault();
+            };
+
+            if (_LINK_REDIR_B2 !== null) {
+              decidirB2(_LINK_REDIR_B2);
+            } else if (google && google.script && google.script.run && google.script.run.getLinkBotonRedireccion) {
+              google.script.run
+                .withSuccessHandler((r) => decidirB2(r && r.url))
+                .withFailureHandler(() => irADefault())
+                .getLinkBotonRedireccion();
+            } else {
+              irADefault();
+            }
+          }, 450);
+        })
+        .withFailureHandler((err) => {
+          $("btnGoogleLogin").disabled = false;
+          toast($("toast1"), "Error: " + (err?.message || err));
+        })
+        .loginConGoogle(email);
+    };
+
+    window.__onAndroidGoogleError = function(msg) {
+      $("btnGoogleLogin").disabled = false;
+      toast($("toast1"), "Google: " + (msg || "Inicio cancelado."));
+    };
+
+    $("btnGoogleLogin").addEventListener("click", () => {
+      $("btnGoogleLogin").disabled = true;
+
+      // ✅ App Android — usar puente nativo (Credential Manager)
+      // AndroidBridge.iniciarSesionGoogle() muestra el selector de cuentas
+      // Google directamente dentro de la app, sin abrir ningún navegador externo
+      // ✅ FIX: AndroidBridge vive en window.top (el WebView nativo),
+      //    no en window (que es el iframe de GAS). Hay que buscarlo en window.top.
+      const _AB_ = (function(){ try { return window.top.AndroidBridge || window.AndroidBridge; } catch(e){ return window.AndroidBridge; } })();
+      if (typeof _AB_ !== "undefined" && _AB_ !== null && typeof _AB_.iniciarSesionGoogle === "function") {
+        _AB_.iniciarSesionGoogle();
+        return;
+      }
+
+      // ✅ Navegador web normal — usar OAuth como siempre
+      if (!google?.script?.run) {
+        toast($("toast1"), "Esta pagina debe abrirse desde tu WebApp (GAS).");
+        $("btnGoogleLogin").disabled = false;
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler((url) => {
+          if (isWebView()) {
+            mostrarModalWebView(url);
+          } else {
+            try {
+              var win = window.open(url, "_blank");
+              if (!win) { window.top.location.href = url; }
+            } catch(e) {
+              window.location.href = url;
+            }
+            $("btnGoogleLogin").disabled = false;
+          }
+        })
+        .withFailureHandler((err) => {
+          $("btnGoogleLogin").disabled = false;
+          toast($("toast1"), "Error: " + (err?.message || err));
+        })
+        .getGoogleAuthUrl("ingrezar");
+    });
+
+    // ---------- Login manual: email/teléfono + contraseña ----------
+    $("btnContinuar").addEventListener("click", () => {
+      const ident = $("ident").value.trim();
+      const pass  = $("password").value.trim();
+
+      if (!ident) { toast($("toast1"), "Ingresa tu e-mail o teléfono."); $("ident").focus(); return; }
+      showPass();
+      if (!pass) { toast($("toast1"), "Ingresa tu contraseña."); $("password").focus(); return; }
+
+      if (!google?.script?.run) {
+        toast($("toast1"), "Esta página debe abrirse desde tu WebApp (GAS).");
+        return;
+      }
+
+      $("btnContinuar").disabled = true;
+      $("btnContinuar").textContent = "Ingresando...";
+
+      google.script.run
+        .withSuccessHandler((res) => {
+          $("btnContinuar").disabled = false;
+          $("btnContinuar").textContent = "Continuar";
+
+          if (!res || !res.ok) {
+            toast($("toast1"), (res && res.message) ? res.message : "No se pudo iniciar sesión.");
+            return;
+          }
+
+          setSession(res.session);
+          toast($("toast1"), "Sesión iniciada ✅");
+          // ✅ NUEVO: redirige según B2 de "BOTONES DE REDIRECCION"; si está vacía → default (index)
+          //    Retardo mínimo para conservar el "user activation" y poder navegar el TOP.
+          setTimeout(() => irAlDestinoDespuesLogin(res.session, res.redirectTo), 120);
+        })
+        .withFailureHandler((err) => {
+          $("btnContinuar").disabled = false;
+          $("btnContinuar").textContent = "Continuar";
+          toast($("toast1"), "Error: " + (err?.message || err));
+        })
+        .loginUsuario(ident, pass);
+    });
+  
+  // ============================================================
+  // SPLASH UNIVERSAL — INGRESAR
+  // Primera vez: muestra https://i.imgur.com/MHb7x08.png
+  // Desde la 2ª vez: carga imagen de columna "INGRESAR"
+  //   en la hoja "SPLASH Y LOGO OFICIAL" (fila 2)
+  // La imagen se guarda en localStorage para carga rápida.
+  // ============================================================
+  (function initSplash() {
+    var SPLASH_DEFAULT   = "https://i.imgur.com/MHb7x08.png";
+    var SPLASH_KEY       = "APP_SPLASH_INGRESAR_V1";  // cache URL por página
+    var SPLASH_SEEN_KEY  = "mys_splash_ingresar_v1"; // sessionStorage
+
+    var splashEl = document.getElementById("splash-screen");
+    var imgEl    = document.getElementById("splash-logo");
+
+    // ── Ayuda: adaptar imagen si es tipo afiche (más alta que ancha) ──
+    function adaptarImagen(img) {
+      if (!img || !img.naturalWidth || !img.naturalHeight) return;
+      var ratio = img.naturalHeight / img.naturalWidth;
+      if (ratio > 1.2) {          // es más alta que ancha → afiche
+        img.classList.add("modo-afiche");
+      } else {
+        img.classList.remove("modo-afiche");
+      }
+    }
+
+    // ── Ocultar splash con animación ──
+    function hideSplash() {
+      if (!splashEl) return;
+      splashEl.classList.add("hide");
+      setTimeout(function() { if (splashEl) splashEl.style.display = "none"; }, 950);
+    }
+
+    // ── Guard: ocultar solo una vez ──
+    var _hidden = false;
+    function hideOnce() {
+      if (_hidden) return;
+      _hidden = true;
+      try { sessionStorage.setItem(SPLASH_SEEN_KEY, "1"); } catch(e) {}
+      hideSplash();
+    }
+
+    // ── Leer cache localStorage ──
+    function cacheGet() {
+      try {
+        var raw = localStorage.getItem(SPLASH_KEY);
+        if (!raw) return null;
+        var obj = JSON.parse(raw);
+        // Cache válido 7 días
+        if (!obj || !obj.url || (Date.now() - (obj.ts||0)) > 7*24*3600*1000) return null;
+        return obj;
+      } catch(e) { return null; }
+    }
+
+    function cacheSet(url) {
+      try {
+        localStorage.setItem(SPLASH_KEY, JSON.stringify({ url: url, ts: Date.now() }));
+      } catch(e) {}
+    }
+
+    // ── Si ya fue mostrado en esta sesión → ocultar al instante ──
+    try {
+      if (sessionStorage.getItem(SPLASH_SEEN_KEY) === "1") {
+        if (splashEl) splashEl.style.display = "none";
+        return;
+      }
+    } catch(e) {}
+
+    // ── 1) Pintar imagen desde cache si existe (instantáneo) ──
+    var cached = cacheGet();
+    if (cached && cached.url) {
+      imgEl.src = cached.url;
+      imgEl.onload = function() { adaptarImagen(imgEl); };
+      if (imgEl.complete && imgEl.naturalWidth) adaptarImagen(imgEl);
+    } else {
+      // Primera vez → imagen por defecto ya está en el src del HTML
+      imgEl.onload = function() { adaptarImagen(imgEl); };
+      if (imgEl.complete && imgEl.naturalWidth) adaptarImagen(imgEl);
+    }
+
+    // ── 2) Llamar a GAS para obtener URL fresca de la columna "INGRESAR" ──
+    if (typeof google === "undefined" || !google.script || !google.script.run) {
+      setTimeout(hideOnce, 900);
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        var url = (res && res.url) ? res.url : "";
+        if (!url) { setTimeout(hideOnce, 900); return; }
+
+        var pre = new Image();
+        pre.onload = function() {
+          imgEl.src = url;
+          cacheSet(url);
+          adaptarImagen(imgEl);
+          // Verificar ratio de nuevo tras cargar
+          if (!imgEl.complete || !imgEl.naturalWidth) {
+            imgEl.onload = function() { adaptarImagen(imgEl); };
+          }
+          setTimeout(hideOnce, 180);
+        };
+        pre.onerror = function() {
+          // Fallback: usar lo que ya está pintado
+          setTimeout(hideOnce, 900);
+        };
+        pre.src = url;
+        // Máximo de espera: 2.5s
+        setTimeout(hideOnce, 2500);
+      })
+      .withFailureHandler(function() { setTimeout(hideOnce, 900); })
+      .getSplashLogo("INGRESAR");
+  })();
+
+
+  // ============================================================
+  // ✅ MODAL RECUPERAR CONTRASEÑA
+  //    JS simple con onclick — sin listeners complejos
+  //    IDs nuevos con prefijo rc para evitar cualquier conflicto
+  // ============================================================
+
+  // Estado del modal
+  var _rc_email = "";
+  var _rc_token = "";
+
+  function rcToastMsg(elId, msg) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(function() { el.classList.remove("show"); }, 5000);
+  }
+
+  function rcAbrirModal() {
+    _rc_email = ""; _rc_token = "";
+    rcIrPaso(1);
+    var el = document.getElementById("rcEmail");
+    if (el) el.value = "";
+    var el2 = document.getElementById("rcCodigo");
+    if (el2) el2.value = "";
+    var el3 = document.getElementById("rcNewPass");
+    if (el3) el3.value = "";
+    var el4 = document.getElementById("rcNewPass2");
+    if (el4) el4.value = "";
+    var ov = document.getElementById("rcOverlay");
+    if (ov) ov.classList.add("open");
+    setTimeout(function() {
+      var ef = document.getElementById("rcEmail");
+      if (ef) ef.focus();
+    }, 120);
+  }
+
+  function rcCerrarModal() {
+    var ov = document.getElementById("rcOverlay");
+    if (ov) ov.classList.remove("open");
+  }
+
+  function rcIrPaso(n) {
+    [1,2,3].forEach(function(i) {
+      var p = document.getElementById("rcPaso" + i);
+      if (!p) return;
+      if (i === n) p.classList.add("activo");
+      else p.classList.remove("activo");
+    });
+  }
+
+  // Abrir modal — onclick del botón goRecuperar
+  document.getElementById("goRecuperar").onclick = function() { rcAbrirModal(); };
+
+  // Cerrar con X
+  document.getElementById("rcBtnCerrar").onclick = function() { rcCerrarModal(); };
+
+  // Cerrar haciendo clic en el fondo oscuro
+  document.getElementById("rcOverlay").onclick = function(e) {
+    if (e.target === this) rcCerrarModal();
+  };
+
+  // Botón volver paso 2 → 1
+  document.getElementById("rcBack2").onclick = function() { rcIrPaso(1); };
+
+  // Toggle ver contraseña
+  document.getElementById("rcToggle1").onclick = function() {
+    var p = document.getElementById("rcNewPass");
+    if (p) p.type = (p.type === "password") ? "text" : "password";
+  };
+  document.getElementById("rcToggle2").onclick = function() {
+    var p = document.getElementById("rcNewPass2");
+    if (p) p.type = (p.type === "password") ? "text" : "password";
+  };
+
+  // ── PASO 1: Enviar código ──
+  document.getElementById("rcBtnEnviar").onclick = function() {
+    var btn = this;
+    var emailEl = document.getElementById("rcEmail");
+    var email = emailEl ? emailEl.value.trim().toLowerCase() : "";
+    if (!email || !email.includes("@")) {
+      rcToastMsg("rcToast1", "Ingresa un e-mail válido.");
+      if (emailEl) emailEl.focus();
+      return;
+    }
+    if (!google || !google.script || !google.script.run) {
+      rcToastMsg("rcToast1", "Esta página debe abrirse desde tu WebApp (GAS).");
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btn.textContent = "Enviar código";
+        if (!res || !res.ok) {
+          rcToastMsg("rcToast1", (res && res.message) ? res.message : "No se pudo enviar el código.");
+          return;
+        }
+        _rc_email = email;
+        var sub = document.getElementById("rcSubtitulo2");
+        if (sub) sub.textContent = "Código enviado a " + email + ". Válido por 10 minutos.";
+        rcIrPaso(2);
+        setTimeout(function() { var c = document.getElementById("rcCodigo"); if (c) c.focus(); }, 80);
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.textContent = "Enviar código";
+        rcToastMsg("rcToast1", "Error: " + ((err && err.message) ? err.message : err));
+      })
+      .enviarCodigoRecuperacion(email);
+  };
+
+  // Enter en campo email → enviar
+  document.getElementById("rcEmail").onkeydown = function(e) {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("rcBtnEnviar").click(); }
+  };
+
+  // ── Reenviar código ──
+  document.getElementById("rcBtnReenviar").onclick = function() {
+    var btn = this;
+    if (!_rc_email) { rcIrPaso(1); return; }
+    if (!google || !google.script || !google.script.run) return;
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+    google.script.run
+      .withSuccessHandler(function(res) {
+        setTimeout(function() {
+          btn.disabled = false;
+          btn.textContent = "Reenviar código";
+        }, 30000);
+        var codigoEl = document.getElementById("rcCodigo");
+        if (codigoEl) codigoEl.value = "";
+        rcToastMsg("rcToast2", res && res.ok ? "Código reenviado ✅" : ((res && res.message) || "Error al reenviar."));
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.textContent = "Reenviar código";
+        rcToastMsg("rcToast2", "Error: " + ((err && err.message) ? err.message : err));
+      })
+      .enviarCodigoRecuperacion(_rc_email);
+  };
+
+  // ── PASO 2: Verificar código ──
+  document.getElementById("rcBtnVerif").onclick = function() {
+    var btn = this;
+    var codigoEl = document.getElementById("rcCodigo");
+    var codigo = codigoEl ? codigoEl.value.replace(/\D/g,"").trim() : "";
+    if (codigo.length !== 6) {
+      rcToastMsg("rcToast2", "El código debe tener exactamente 6 dígitos.");
+      if (codigoEl) codigoEl.focus();
+      return;
+    }
+    if (!_rc_email) { rcIrPaso(1); return; }
+    if (!google || !google.script || !google.script.run) return;
+    btn.disabled = true;
+    btn.textContent = "Verificando...";
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btn.textContent = "Verificar código";
+        if (!res || !res.ok) {
+          rcToastMsg("rcToast2", (res && res.message) ? res.message : "Código incorrecto o expirado.");
+          return;
+        }
+        _rc_token = res.token || "";
+        rcIrPaso(3);
+        setTimeout(function() { var p = document.getElementById("rcNewPass"); if (p) p.focus(); }, 80);
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.textContent = "Verificar código";
+        rcToastMsg("rcToast2", "Error: " + ((err && err.message) ? err.message : err));
+      })
+      .verificarCodigoRecuperacion(_rc_email, codigo);
+  };
+
+  // Enter en campo código → verificar
+  document.getElementById("rcCodigo").onkeydown = function(e) {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("rcBtnVerif").click(); }
+  };
+
+  // ── PASO 3: Guardar nueva contraseña ──
+  document.getElementById("rcBtnGuardar").onclick = function() {
+    var btn = this;
+    var p1el = document.getElementById("rcNewPass");
+    var p2el = document.getElementById("rcNewPass2");
+    var pass1 = p1el ? p1el.value.trim() : "";
+    var pass2 = p2el ? p2el.value.trim() : "";
+    if (!pass1)           { rcToastMsg("rcToast3","Ingresa tu nueva contraseña."); if(p1el) p1el.focus(); return; }
+    if (pass1.length < 8) { rcToastMsg("rcToast3","Mínimo 8 caracteres."); return; }
+    if (/(012|123|234|345|456|567|678|789)/.test(pass1)) { rcToastMsg("rcToast3","Evita secuencias como 123."); return; }
+    if (/(.)/.test(pass1)) { rcToastMsg("rcToast3","Evita caracteres repetidos como aaa."); return; }
+    if (pass1 !== pass2)  { rcToastMsg("rcToast3","Las contraseñas no coinciden."); if(p2el) p2el.focus(); return; }
+    if (!_rc_email || !_rc_token) { rcToastMsg("rcToast3","Sesión expirada. Vuelve a intentar."); rcIrPaso(1); return; }
+    if (!google || !google.script || !google.script.run) return;
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btn.textContent = "Guardar nueva contraseña";
+        if (!res || !res.ok) {
+          rcToastMsg("rcToast3", (res && res.message) ? res.message : "No se pudo actualizar la contraseña.");
+          return;
+        }
+        rcCerrarModal();
+        setTimeout(function() { toast($("toast1"), "¡Contraseña actualizada! Ya puedes ingresar ✅"); }, 150);
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.textContent = "Guardar nueva contraseña";
+        rcToastMsg("rcToast3", "Error: " + ((err && err.message) ? err.message : err));
+      })
+      .actualizarContrasenaRecuperacion(_rc_email, _rc_token, pass1);
+  };
+  // ── fin modal recuperar contraseña ──
+
+  </script>
+
+  <!-- ===== MODAL WEBVIEW — abrir en Chrome/Safari ===== -->
+  <div id="wvOverlay">
+    <div id="wvModal">
+      <div class="wv-icon">🌐</div>
+      <div class="wv-title">Abre esto en Chrome o Safari</div>
+      <div class="wv-body">
+        Google no permite iniciar sesión dentro de apps.<br>
+        Copia el enlace y pégalo en <strong>Chrome</strong> o <strong>Safari</strong>.
+      </div>
+      <div class="wv-url" id="wvUrlText"></div>
+      <button id="wvBtnCopiar" type="button">📋 Copiar enlace</button>
+      <button id="wvBtnCerrar" type="button">Cancelar</button>
+    </div>
+  </div>
+  <!-- Fin modal webview -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       G&M — CAPA NEÓN PARA INGRESAR / CREAR CUENTA
+       Copiada del indexGIFT. Va al FINAL del <body> a propósito: así se
+       monta encima de todo lo anterior sin tener que borrar una sola
+       regla vieja. Si algún día quieres volver atrás, borras este bloque
+       completo y las dos páginas vuelven exactamente a como estaban.
+       ══════════════════════════════════════════════════════════════════ -->
+  <style id="gmNeonAuth">
+
+  /* ═══ 0. PALETA (idéntica a indexGIFT) ══════════════════════════════ */
+  :root{
+    --gn-bg:      #05050e;
+    --gn-bg2:     #0a0a1c;
+    --gn-surf:    #101026;
+    --gn-surf2:   #16163a;
+    --gn-surf3:   #1d1d47;
+
+    --gn-violeta: #a855f7;
+    --gn-magenta: #ff2d95;
+    --gn-cian:    #22e3d0;
+    --gn-lima:    #bced1c;
+    --gn-menta:   #9dffdc;
+    --gn-azul:    #4b6bff;
+
+    --gn-txt:     #ecebff;
+    --gn-txt2:    #a8a7cf;
+    --gn-tinta:   #07030f;
+
+    --gn-grad:       linear-gradient(135deg, #a855f7 0%, #ff2d95 100%);
+    --gn-grad-arco:  linear-gradient(115deg, #22e3d0 0%, #4b6bff 22%, #a855f7 48%, #ff2d95 74%, #bced1c 100%);
+    --gn-grad-boton: linear-gradient(180deg, #c9ff3d 0%, #bced1c 45%, #86b900 100%);
+  }
+
+  /* ═══ 1. FONDO GENERAL ══════════════════════════════════════════════ */
+  html, body{
+    background: var(--gn-bg) !important;
+    color: var(--gn-txt) !important;
+  }
+  /* Resplandores en capa fija aparte: no encarecen el scroll del WebView */
+  body::before{
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(900px 520px at 12% -6%,  rgba(168,85,247,.24), transparent 62%),
+      radial-gradient(760px 480px at 92% 4%,   rgba(34,227,208,.16), transparent 60%),
+      radial-gradient(900px 620px at 50% 106%, rgba(255,45,149,.18), transparent 62%);
+  }
+  html{ scrollbar-width: none !important; -ms-overflow-style: none !important; }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar{ width: 0 !important; height: 0 !important; background: transparent !important; }
+
+  /* ═══ 3. LOGO DE LA ESQUINA ════════════════════════════════════════ */
+  .brand img{
+    filter: drop-shadow(0 0 14px rgba(168,85,247,.55)) drop-shadow(0 6px 18px rgba(0,0,0,.5)) !important;
+  }
+
+  /* ═══ 4. TÍTULOS ═══════════════════════════════════════════════════ */
+  .hero{ color: var(--gn-txt) !important; }
+  .hero h1{
+    font-family: "Roboto", system-ui, -apple-system, Segoe UI, Arial, sans-serif !important;
+    color: var(--gn-menta) !important;
+    text-shadow: 0 0 16px rgba(157,255,220,.4), 0 10px 24px rgba(0,0,0,.45) !important;
+    font-weight: 900 !important;
+  }
+
+  /* ═══ 5. TARJETAS Y PANELES ════════════════════════════════════════ */
+  .card{
+    background: linear-gradient(#111129, #0a0a1e) padding-box,
+                var(--gn-grad) border-box !important;
+    border: 2px solid transparent !important;
+    box-shadow: 0 0 30px rgba(168,85,247,.24), 0 22px 54px rgba(0,0,0,.6) !important;
+  }
+  .panel{
+    background: #0d0d24 !important;
+    border: 1px solid rgba(168,85,247,.28) !important;
+    box-shadow: inset 0 0 22px rgba(168,85,247,.07) !important;
+  }
+
+  /* ═══ 6. TEXTOS SUELTOS ════════════════════════════════════════════ */
+  label{ color: var(--gn-menta) !important; }
+  .sep{ color: var(--gn-txt2) !important; }
+  .sep::before, .sep::after{ background: rgba(168,85,247,.32) !important; }
+  .below{ color: var(--gn-txt2) !important; }
+  .help, .passRules, .rc-hint, .rc-subtitulo{ color: var(--gn-txt2) !important; }
+  .rc-titulo{ color: var(--gn-menta) !important; text-shadow: 0 0 12px rgba(157,255,220,.5) !important; }
+  .passDot{ border-color: rgba(168,85,247,.5) !important; }
+  .topline{ color: var(--gn-txt2) !important; }
+
+  /* ═══ 7. CAMPOS DE TEXTO ═══════════════════════════════════════════ */
+  .input, .otp{
+    background: #0b0b20 !important;
+    color: var(--gn-txt) !important;
+    border: 2px solid rgba(168,85,247,.38) !important;
+  }
+  .input::placeholder{ color: #6e6d96 !important; }
+  .input:focus, .otp:focus{
+    border-color: var(--gn-cian) !important;
+    box-shadow: 0 0 0 4px rgba(34,227,208,.16), 0 0 18px rgba(34,227,208,.3) !important;
+  }
+  /* Autocompletar de Chrome: que no pinte el campo de blanco */
+  .input:-webkit-autofill,
+  .input:-webkit-autofill:hover,
+  .input:-webkit-autofill:focus{
+    -webkit-text-fill-color: var(--gn-txt) !important;
+    -webkit-box-shadow: 0 0 0 1000px #0b0b20 inset !important;
+    caret-color: var(--gn-txt) !important;
+  }
+
+  /* ═══ 8. BOTONES — TODOS CON EL DISEÑO DE "CÓMO FUNCIONA" ══════════
+     Píldora negra, borde degradado arcoíris y letras verde menta con
+     brillo. Es exactamente la misma receta de #gmCtaComo en indexGIFT. */
+  .btn,
+  .primary,
+  .rc-back,
+  .rc-reenviar,
+  #wvBtnCopiar,
+  #wvBtnCerrar,
+  #goCrear,
+  #goRecuperar,
+  #btnVolver,
+  #btnReenviar{
+    position: relative;
+    background: linear-gradient(#08081a, #08081a) padding-box,
+                var(--gn-grad-arco) border-box !important;
+    border: 2px solid transparent !important;
+    border-radius: 999px !important;
+    color: #c9ffd8 !important;
+    font-family: "Roboto", system-ui, sans-serif !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    letter-spacing: .8px !important;
+    text-shadow: 0 0 10px rgba(157,255,220,.8) !important;
+    box-shadow: 0 0 18px rgba(168,85,247,.35), 0 8px 22px rgba(0,0,0,.5) !important;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: transform .1s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+  .btn:hover,
+  .primary:hover,
+  .rc-back:hover,
+  .rc-reenviar:hover,
+  #wvBtnCopiar:hover,
+  #wvBtnCerrar:hover,
+  #goCrear:hover,
+  #goRecuperar:hover,
+  #btnVolver:hover,
+  #btnReenviar:hover{
+    box-shadow: 0 0 26px rgba(255,45,149,.5), 0 8px 22px rgba(0,0,0,.5) !important;
+  }
+  .btn:active,
+  .primary:active,
+  .rc-back:active,
+  .rc-reenviar:active,
+  #wvBtnCopiar:active,
+  #wvBtnCerrar:active,
+  #goCrear:active,
+  #goRecuperar:active,
+  #btnVolver:active,
+  #btnReenviar:active{ transform: scale(.975) !important; }
+
+  .btn:focus-visible,
+  .primary:focus-visible{ outline: 3px solid var(--gn-cian) !important; outline-offset: 3px; }
+
+  /* Botón deshabilitado (mientras envía el código) */
+  .btn:disabled,
+  .primary:disabled,
+  .rc-back:disabled,
+  .rc-reenviar:disabled{
+    opacity: .55 !important;
+    cursor: default !important;
+    box-shadow: none !important;
+  }
+
+  /* Los secundarios (volver / reenviar) en tamaño más chico, mismo diseño */
+  .rc-back, .rc-reenviar,
+  #goCrear, #goRecuperar, #btnVolver, #btnReenviar{
+    padding: 10px 18px !important;
+    font-size: clamp(12px, 3.2vw, 14px) !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+    width: auto !important;
+  }
+
+  /* La "G" de Google conserva su color propio sobre la píldora negra */
+  .googleG{ background: #fff !important; color: #4285F4 !important; }
+
+  /* ═══ 9. ENLACES DE TEXTO ══════════════════════════════════════════ */
+  .link{
+    color: var(--gn-menta) !important;
+    text-shadow: 0 0 10px rgba(157,255,220,.55) !important;
+    text-decoration-color: rgba(157,255,220,.5) !important;
+  }
+  .link:hover{ color: var(--gn-lima) !important; }
+  /* Los .link que en realidad son botones de accion: pildora, no texto */
+  #goCrear, #goRecuperar, #btnVolver, #btnReenviar{
+    color: #c9ffd8 !important;
+    text-decoration: none !important;
+  }
+
+  /* ═══ 10. OJITO DE LA CONTRASEÑA ═══════════════════════════════════ */
+  .passToggle{
+    background: #14143a !important;
+    border: 1px solid rgba(168,85,247,.45) !important;
+    color: var(--gn-menta) !important;
+  }
+  .passToggle:active{ background: #1d1d47 !important; }
+
+  /* ═══ 11. AVISOS (toast) ═══════════════════════════════════════════ */
+  .toast, .toast-rc{
+    background: #14143a !important;
+    color: var(--gn-txt) !important;
+    border: 1px solid rgba(255,45,149,.45) !important;
+    box-shadow: 0 0 20px rgba(255,45,149,.22) !important;
+  }
+
+  /* ═══ 12. MODAL RECUPERAR CONTRASEÑA ═══════════════════════════════ */
+  #rcOverlay{ background: rgba(4,2,12,.82) !important; }
+  #rcModal{
+    background: linear-gradient(#111129,#0a0a1e) padding-box,
+                var(--gn-grad) border-box !important;
+    border: 2px solid transparent !important;
+    box-shadow: 0 0 34px rgba(168,85,247,.28), 0 26px 60px rgba(0,0,0,.65) !important;
+    color: var(--gn-txt) !important;
+  }
+  #rcBtnCerrar{
+    background: rgba(255,45,149,.18) !important;
+    color: var(--gn-magenta) !important;
+    border: 1px solid rgba(255,45,149,.5) !important;
+  }
+
+  /* ═══ 13. MODAL "ABRIR EN CHROME" ══════════════════════════════════ */
+  #wvOverlay{ background: rgba(4,2,12,.82) !important; }
+  #wvModal{
+    background: linear-gradient(#111129,#0a0a1e) padding-box,
+                var(--gn-grad) border-box !important;
+    border: 2px solid transparent !important;
+    box-shadow: 0 0 34px rgba(168,85,247,.28), 0 26px 60px rgba(0,0,0,.65) !important;
+    color: var(--gn-txt) !important;
+  }
+  #wvModal .wv-title{ color: var(--gn-menta) !important; text-shadow: 0 0 12px rgba(157,255,220,.5) !important; }
+  #wvModal .wv-body{ color: var(--gn-txt2) !important; }
+  #wvModal .wv-url{
+    background: #0b0b20 !important;
+    color: var(--gn-cian) !important;
+    border: 1px solid rgba(34,227,208,.35) !important;
+  }
+
+  </style>
+
+
+<style id="gmSplashNeonCSS">
+/* ═══════════════════════════════════════════════════════════════════
+   ✨ SPLASH INICIAL IGUAL AL DE indexGIFT
+   Copia literal del splash de la portada: fondo violeta neón, rejilla de
+   arcade, chispas de colores subiendo, los dos íconos que flotan (libro y
+   rompecabezas), el aro de energía girando detrás del logo, el texto con
+   brillo que se desplaza y la barra arcoíris.
+
+   OJO: la animación de salida NO se toca. Esta página oculta el splash con
+   la clase .hide y su propio @keyframes splashFadeOut, que sigue viviendo
+   en el CSS de más arriba. Aquí solo se cambia cómo SE VE, nunca cuándo
+   aparece ni cuándo se va.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Animaciones (mismos nombres y tiempos que en index) ── */
+@keyframes gmSplFadeIn      { 0%{ opacity:0; transform:scale(.85); } 100%{ opacity:1; transform:scale(1); } }
+@keyframes gmSplBgPulse     { 0%,100%{ opacity:.35; } 50%{ opacity:.75; } }
+@keyframes gmSplParticle    { 0%{ transform:translateY(0) translateX(0) scale(.6); opacity:0; }
+                              15%{ opacity:1; }
+                              100%{ transform:translateY(-120vh) translateX(var(--px,20px)) scale(1); opacity:0; } }
+@keyframes gmSplPageTurn    { 0%,100%{ transform:rotateY(0deg); } 50%{ transform:rotateY(-140deg); } }
+@keyframes gmSplPuzzleDrop  { 0%{ transform:translateY(-14px) scale(.6) rotate(-8deg); opacity:0; }
+                              60%{ opacity:1; }
+                              100%{ transform:translateY(0) scale(1) rotate(0deg); opacity:1; } }
+@keyframes gmSplOrbitFloat  { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-10px); } }
+@keyframes gmSplShimmer     { 0%{ background-position:-200% 0; } 100%{ background-position:200% 0; } }
+@keyframes gmSplBarFill     { 0%{ width:0%; } 100%{ width:100%; } }
+@keyframes gmSplGirar       { to{ transform:translate(-50%,-50%) rotate(360deg); } }
+@keyframes gmSplLogoGlow{
+  0%,100%{ filter: drop-shadow(0 0 10px rgba(168,85,247,.45)) drop-shadow(0 0 3px rgba(34,227,208,.35)); }
+  50%    { filter: drop-shadow(0 0 32px rgba(255,45,149,.75)) drop-shadow(0 0 12px rgba(34,227,208,.65)); }
+}
+
+/* ── Lienzo ── */
+#splash-screen{
+  background:
+    radial-gradient(ellipse at 50% 32%, #2a0f52 0%, #150a34 34%, #08051a 66%, #030308 100%) !important;
+  overflow: hidden !important;
+}
+
+/* ── Fondo: rejilla de arcade + halo que respira ── */
+#splash-bg-fx{
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(168,85,247,.26), transparent 62%),
+    repeating-linear-gradient(0deg,  rgba(34,227,208,.055) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(90deg, rgba(168,85,247,.055) 0 1px, transparent 1px 46px) !important;
+  animation: gmSplBgPulse 3.2s ease-in-out infinite !important;
+}
+#splash-bg-fx .splash-particle{
+  position: absolute !important;
+  bottom: -20px !important;
+  width: 6px !important; height: 6px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, #ffffff 0%, #22e3d0 45%, transparent 100%) !important;
+  box-shadow: 0 0 10px rgba(34,227,208,.9) !important;
+  animation-name: gmSplParticle !important;
+  animation-timing-function: linear !important;
+  animation-iteration-count: infinite !important;
+}
+#splash-bg-fx .splash-particle:nth-child(2n){
+  background: radial-gradient(circle, #ffffff 0%, #ff2d95 45%, transparent 100%) !important;
+  box-shadow: 0 0 10px rgba(255,45,149,.9) !important;
+}
+#splash-bg-fx .splash-particle:nth-child(3n){
+  background: radial-gradient(circle, #ffffff 0%, #a855f7 45%, transparent 100%) !important;
+  box-shadow: 0 0 10px rgba(168,85,247,.9) !important;
+}
+#splash-bg-fx .splash-particle:nth-child(4n){
+  background: radial-gradient(circle, #ffffff 0%, #bced1c 45%, transparent 100%) !important;
+  box-shadow: 0 0 10px rgba(188,237,28,.85) !important;
+}
+
+/* ── Centro: se apila en columna, como en index ── */
+#splash-center{
+  position: relative !important;
+  isolation: isolate !important;
+  z-index: 2 !important;
+  width: 100% !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+  gap: 22px !important;
+  padding: 0 18px !important;
+}
+/* Aro de energía girando detrás del logo */
+#splash-center::before{
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: min(74vw, 460px); height: min(74vw, 460px);
+  transform: translate(-50%,-50%);
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #22e3d0, #4b6bff, #a855f7, #ff2d95, #bced1c, #22e3d0);
+  filter: blur(46px);
+  opacity: .40;
+  z-index: -1;
+  pointer-events: none;
+  animation: gmSplGirar 9s linear infinite;
+}
+
+/* ── Los dos íconos que flotan sobre el logo ── */
+.splash-orbit-icons{
+  position: relative;
+  width: 100%;
+  max-width: 620px;
+  height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.splash-orbit-icons svg{
+  position: absolute;
+  top: -78px;
+  filter: drop-shadow(0 0 8px rgba(34,227,208,.75));
+  animation: gmSplOrbitFloat 2.6s ease-in-out infinite;
+}
+.splash-book-icon{ left: 6%; animation-delay: .15s !important; }
+.splash-book-icon .splash-page{ transform-origin: 0% 50%; animation: gmSplPageTurn 2.4s ease-in-out infinite; }
+.splash-book-icon path{ stroke: #22e3d0 !important; }
+.splash-book-icon .splash-page{ stroke: #9dffdc !important; }
+.splash-book-icon line{ stroke: #a855f7 !important; }
+.splash-puzzle-icon{ right: 6%; animation-delay: .55s !important; filter: drop-shadow(0 0 8px rgba(255,45,149,.75)); }
+.splash-puzzle-icon .splash-piece{ opacity: 0; animation: gmSplPuzzleDrop .6s ease-out forwards; }
+.splash-puzzle-icon .splash-piece:nth-child(1){ animation-delay: .25s; fill: #a855f7 !important; }
+.splash-puzzle-icon .splash-piece:nth-child(2){ animation-delay: .55s; fill: #ff2d95 !important; }
+.splash-puzzle-icon .splash-piece:nth-child(3){ animation-delay: .85s; fill: #22e3d0 !important; }
+.splash-puzzle-icon .splash-piece:nth-child(4){ animation-delay: 1.15s; fill: #bced1c !important; }
+
+/* ── El logo ── */
+#splash-logo{
+  width: 100% !important;
+  max-width: 620px !important;
+  max-height: none !important;
+  height: auto !important;
+  margin: 0 !important;
+  display: block !important;
+  border-radius: 0 !important;
+  object-fit: contain !important;
+  animation: gmSplFadeIn 1s ease-out, gmSplLogoGlow 2.8s ease-in-out .5s infinite !important;
+}
+/* El logo oficial es cuadrado, así que el "modo afiche" (que estira la
+   imagen a pantalla completa cuando es más alta que ancha) no debe
+   aplicarse nunca. El JS lo sigue calculando; aquí se anula su efecto. */
+#splash-logo.modo-afiche{
+  width: 100% !important;
+  max-width: 620px !important;
+  height: auto !important;
+  object-fit: contain !important;
+  border-radius: 0 !important;
+}
+
+/* ── Frase y barra de carga ── */
+#splashLoadingText{
+  display: block;
+  font-family: 'Orbitron', system-ui, sans-serif;
+  font-size: clamp(14px, 4vw, 18px);
+  letter-spacing: .06em;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(90deg, #22e3d0 0%, #ffffff 30%, #ff2d95 55%, #a855f7 78%, #22e3d0 100%);
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(168,85,247,.55));
+  animation: gmSplShimmer 2.4s linear infinite;
+}
+#splashLoadingBar{
+  width: min(220px, 60vw);
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(168,85,247,.16);
+  box-shadow: 0 0 14px rgba(168,85,247,.28);
+  overflow: hidden;
+}
+#splashLoadingBar span{
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(115deg, #22e3d0 0%, #4b6bff 22%, #a855f7 48%, #ff2d95 74%, #bced1c 100%);
+  box-shadow: 0 0 14px rgba(34,227,208,.85);
+  animation: gmSplBarFill 1.8s cubic-bezier(.4,0,.2,1) infinite;
+}
+
+/* En celular el texto de la frase también se ve grande */
+@media (max-width:720px), (hover:none) and (pointer:coarse){
+  #splashLoadingText{ font-size: clamp(18px, 4.6vw, 30px) !important; }
+  .splash-orbit-icons svg{ width: 74px !important; height: 74px !important; top: -104px !important; }
+}
+
+/* Respeta a quien pidió menos movimiento en el sistema */
+@media (prefers-reduced-motion: reduce){
+  #splash-center::before{ animation: none !important; }
+  #splash-bg-fx, #splash-bg-fx .splash-particle,
+  .splash-orbit-icons svg, #splashLoadingText{ animation: none !important; }
+  #splash-logo{ animation: gmSplFadeIn 1s ease-out !important; }
+}
+
+</style>
+
+
+<style id="gmIngresarMejorasCSS">
+/* ═══════════════════════════════════════════════════════════════════
+   MEJORAS DE INGRESAR
+   Va al final del <body> a propósito: se monta encima de todo lo
+   anterior sin borrar ni una regla vieja. Si algún día quieres
+   volver atrás, borras este bloque completo y la página vuelve
+   exactamente a como estaba.
+
+   Contiene 3 cosas:
+     2. La G de Google a todo color con brillo neón.
+     3. Texto grande en celular dentro de la tarjeta.
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+/* ══ 2) LA G DE GOOGLE, A COLOR Y CON BRILLO NEÓN ═══════════════════ */
+.googleG{
+  width: 30px !important;
+  height: 30px !important;
+  flex: 0 0 auto;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  box-shadow:
+    0 0 12px rgba(66,133,244,.85),
+    0 0 22px rgba(234,67,53,.55),
+    0 0 30px rgba(251,188,5,.45);
+  animation: gmGoogleHalo 2.6s ease-in-out infinite;
+}
+.googleG svg{
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* El brillo que hace que el ícono se vea "encendido" */
+  filter: drop-shadow(0 0 3px rgba(66,133,244,.9))
+          drop-shadow(0 0 5px rgba(234,67,53,.5));
+}
+/* Los 4 colores oficiales de Google */
+.googleG .gG-azul    { fill: #4285F4; }
+.googleG .gG-verde   { fill: #34A853; }
+.googleG .gG-amarillo{ fill: #FBBC05; }
+.googleG .gG-rojo    { fill: #EA4335; }
+
+/* El halo va rotando de color entre los cuatro */
+@keyframes gmGoogleHalo{
+  0%, 100%{ box-shadow: 0 0 12px rgba(66,133,244,.9),  0 0 26px rgba(66,133,244,.45); }
+  25%     { box-shadow: 0 0 12px rgba(234,67,53,.9),   0 0 26px rgba(234,67,53,.45); }
+  50%     { box-shadow: 0 0 12px rgba(251,188,5,.9),   0 0 26px rgba(251,188,5,.45); }
+  75%     { box-shadow: 0 0 12px rgba(52,168,83,.9),   0 0 26px rgba(52,168,83,.45); }
+}
+
+/* El botón le deja aire al ícono */
+#btnGoogle, #btnGoogleLogin{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+}
+
+
+/* ══ 3) EN CELULAR: TODO EL TEXTO DE LA TARJETA, MUY GRANDE ════════
+   Más arriba en el archivo hay una regla anti-zoom de iOS que pone
+   TODOS los botones e inputs en 16px. Como va después, le ganaba a
+   los tamaños grandes. Aquí se corrige con !important, pero dejando
+   los campos SIEMPRE por encima de 16px, que es lo que evita que
+   iOS haga zoom solo al escribir. */
+@media (max-width: 720px), (hover: none) and (pointer: coarse){
+
+
+  /* ── Etiquetas y campos ── */
+  label{ font-size: 26px !important; font-weight: 800 !important; }
+
+  .input{
+    font-size: 26px !important;   /* muy por encima de 16px: sin auto-zoom */
+    padding: 22px 18px !important;
+  }
+  .input::placeholder{ font-size: 22px !important; }
+
+  /* ── Botones: el texto grande de verdad ── */
+  #btnGoogle, #btnGoogleLogin{
+    font-size: 24px !important;
+    padding: 20px 16px !important;
+  }
+  .googleG{
+    width: 44px !important;
+    height: 44px !important;
+    padding: 7px;
+  }
+
+  .primary,
+  #btnContinuar,
+  #btnVerificar{
+    font-size: 30px !important;
+    padding: 24px 18px !important;
+  }
+
+  .link,
+  #btnVolver,
+  #btnReenviar{ font-size: 21px !important; }
+
+  .passToggle{
+    font-size: 28px !important;
+    width: 62px !important;
+    height: 62px !important;
+  }
+
+  /* ── Textos de apoyo ── */
+  .sep{ font-size: 22px !important; }
+  .help{ font-size: 22px !important; line-height: 1.45 !important; }
+  .passRules{ font-size: 20px !important; line-height: 1.4 !important; }
+  .toast{ font-size: 22px !important; padding: 16px !important; }
+
+  /* ── Paso 2: verificación ── */
+  .topline > div{ font-size: 26px !important; }
+  #step2 > div[style*="--muted"]{ font-size: 22px !important; line-height: 1.45 !important; }
+  .otp{
+    font-size: 40px !important;
+    width: 84px !important;
+    height: 84px !important;
+  }
+}
+
+/* Celular acostado: se achica un poco para que todo quepa */
+@media (max-height: 540px) and (hover: none) and (pointer: coarse){
+  .primary, #btnContinuar, #btnVerificar{ font-size: 20px !important; padding: 14px !important; }
+  #btnGoogle, #btnGoogleLogin{ font-size: 18px !important; padding: 14px !important; }
+  .input{ font-size: 18px !important; padding: 14px !important; }
+  label{ font-size: 18px !important; }
+}
+
+
+
+/* Respeta a quien pidió menos movimiento en su teléfono */
+@media (prefers-reduced-motion: reduce){
+  .gm-nube,
+  .googleG{ animation: none !important; }
+}
+</style>
+
+<style id="gmNubeYBordeCSS">
+/* ═══════════════════════════════════════════════════════════════════
+   NUBE DE CÓMIC + BORDE RGB + TEXTO GRANDE
+   Va al final del <body> a propósito: se monta encima de todo lo
+   anterior sin borrar ni una regla vieja. Si quieres volver atrás,
+   borras este bloque y el script gmNubeJS de más abajo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+/* ══ 1) LA NUBE DE CÓMIC ════════════════════════════════════════════ */
+
+#gmHero{
+  /* Arriba: la nube arranca más abajo, despegada del logo.
+     Abajo: aire generoso entre la nube y el bloque del formulario. */
+  padding: 70px 0 64px !important;
+  transition: opacity .5s ease;
+}
+/* Al terminar de escribir, la nube se desvanece PERO sigue ocupando su
+   lugar: por eso se usa visibility y no display. Así el bloque de los
+   campos se queda exactamente donde estaba y no salta hacia arriba. */
+#gmHero.gm-hero-fin{
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.gm-nube{
+  position: relative;
+  width: min(680px, 100%);
+  margin: 0 auto;
+  padding: 26px 24px;
+  box-sizing: border-box;
+
+  background: #0b0718;
+  border: 3px solid #a855f7;
+  border-radius: 34px;
+  box-shadow:
+    0 0 26px rgba(168,85,247,.55),
+    inset 0 0 24px rgba(168,85,247,.12);
+
+  opacity: 0;
+  transform: scale(.94);
+  transition: opacity .45s ease, transform .45s ease;
+}
+/* Aparece recién cuando el splash ya se fue */
+.gm-nube.gm-nube-lista{ opacity: 1; transform: scale(1); }
+
+/* ── La colita de la nube, apuntando hacia el formulario ── */
+.gm-nube::before,
+.gm-nube::after{
+  content: "";
+  position: absolute;
+  left: 30%;
+  width: 0; height: 0;
+  border-left: 26px solid transparent;
+  border-right: 26px solid transparent;
+}
+/* Capa de atrás: el contorno violeta */
+.gm-nube::before{
+  bottom: -33px;
+  border-top: 33px solid #a855f7;
+  filter: drop-shadow(0 6px 10px rgba(168,85,247,.45));
+}
+/* Capa de adelante: el relleno oscuro, para que quede solo el borde */
+.gm-nube::after{
+  bottom: -26px;
+  border-top: 33px solid #0b0718;
+}
+
+/* ── El texto que se va tecleando ── */
+.gm-nube-txt{
+  font-family: "Roboto", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  font-size: clamp(17px, 2.1vw, 21px);
+  font-weight: 900;
+  line-height: 1.45;
+  color: #9dffdc;
+  text-shadow: 0 0 12px rgba(157,255,220,.55);
+  text-align: center;
+
+  /* Alto fijo de 2 filas: la nube nunca cambia de tamaño */
+  min-height: calc(1.45em * 2);
+  height: calc(1.45em * 2);
+  overflow: hidden;
+
+  /* Centrado vertical: cuando hay 1 sola fila no queda hueco abajo */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: opacity .25s ease;
+}
+/* Cuando las 2 filas se llenan, se van suavemente y entra el texto nuevo */
+.gm-nube-txt.gm-fade{ opacity: 0; }
+
+/* Cursor que parpadea mientras escribe */
+.gm-nube-txt.gm-escribiendo::after{
+  content: "▌";
+  margin-left: 2px;
+  color: #bced1c;
+  animation: gmCursorParpadeo .8s steps(1) infinite;
+}
+@keyframes gmCursorParpadeo{ 0%,49%{opacity:1} 50%,100%{opacity:0} }
+
+
+/* ══ 2) BORDE RGB QUE RECORRE TODA LA ORILLA DE LA TARJETA ══════════
+   Mismos colores del botón "Registrarse con Google" (--gn-grad-arco).
+   El degradado es más ancho que la tarjeta y se desplaza en bucle, así
+   el color viaja por todo el contorno sin cortes. */
+.card{
+  background:
+    linear-gradient(#111129, #0a0a1e) padding-box,
+    linear-gradient(115deg,
+      #22e3d0 0%, #4b6bff 16%, #a855f7 32%, #ff2d95 48%, #bced1c 64%,
+      #22e3d0 80%, #4b6bff 100%) border-box !important;
+  background-size: auto, 300% 100% !important;
+  border: 3px solid transparent !important;
+  box-shadow:
+    0 0 30px rgba(168,85,247,.30),
+    0 22px 54px rgba(0,0,0,.6) !important;
+  animation: gmBordeRGB 7s linear infinite;
+}
+@keyframes gmBordeRGB{
+  0%   { background-position: 0 0, 0%   50%; }
+  100% { background-position: 0 0, 300% 50%; }
+}
+
+
+/* ══ 3) EN CELULAR: TODO EL TEXTO, MUY GRANDE ══════════════════════ */
+@media (max-width: 720px), (hover: none) and (pointer: coarse){
+
+  #gmHero{ padding: 84px 0 72px !important; }
+
+  .gm-nube{
+    /* Más angosta que el bloque del formulario, como en el bosquejo */
+    width: min(600px, 88%);
+    padding: 28px 20px;
+    border-radius: 38px;
+    border-width: 4px;
+  }
+  .gm-nube-txt{
+    font-size: clamp(21px, 5.4vw, 29px);
+    line-height: 1.42;
+    min-height: calc(1.42em * 2);
+    height: calc(1.42em * 2);
+  }
+
+  /* Etiquetas y campos */
+  label{ font-size: 31px !important; font-weight: 800 !important; margin: 20px 0 12px !important; }
+  .input{ font-size: 29px !important; padding: 26px 20px !important; border-radius: 16px !important; }
+  .input::placeholder{ font-size: 26px !important; }
+
+  /* Botones */
+  /* Texto grande; si no cabe en una línea, parte en dos y se ve bien */
+  #btnGoogle, #btnGoogleLogin{
+    font-size: 26px !important;
+    padding: 22px 12px !important;
+    line-height: 1.2 !important;
+  }
+  .googleG{ width: 42px !important; height: 42px !important; padding: 7px; }
+  .primary, #btnContinuar, #btnVerificar{
+    font-size: 35px !important;
+    padding: 28px 18px !important;
+  }
+  .link, #btnVolver, #btnReenviar{ font-size: 25px !important; }
+  .passToggle{ font-size: 30px !important; width: 66px !important; height: 66px !important; }
+
+  /* Textos de apoyo */
+  .sep{ font-size: 26px !important; }
+  .help{ font-size: 26px !important; line-height: 1.45 !important; }
+  .passRules{ font-size: 24px !important; line-height: 1.4 !important; }
+  .passRule{ margin: 10px 0 !important; }
+  .toast{ font-size: 24px !important; padding: 18px !important; }
+
+  /* Paso 2: verificación */
+  .topline > div{ font-size: 30px !important; }
+  #step2 > div[style*="--muted"]{ font-size: 26px !important; line-height: 1.45 !important; }
+  .otp{ font-size: 42px !important; width: 86px !important; height: 86px !important; }
+
+  /* Borde un poco más marcado en pantalla chica */
+  .card{ border-width: 4px !important; }
+
+  /* ── El bloque del formulario, más grande ── */
+  .wrap{ width: min(980px, 97vw) !important; }
+  .card{
+    width: 100% !important;
+    padding: 22px !important;
+    border-radius: 32px !important;
+  }
+  .panel{
+    padding: 26px 20px !important;
+    border-radius: 26px !important;
+  }
+}
+
+/* Celular acostado: se achica para que quepa */
+@media (max-height: 540px) and (hover: none) and (pointer: coarse){
+  .gm-nube{ padding: 18px 16px; }
+  .gm-nube-txt{ font-size: 17px; min-height: calc(1.4em * 2); height: calc(1.4em * 2); }
+  .primary, #btnContinuar, #btnVerificar{ font-size: 20px !important; padding: 14px !important; }
+  #btnGoogle, #btnGoogleLogin{ font-size: 18px !important; padding: 14px !important; }
+  .input{ font-size: 18px !important; padding: 14px !important; }
+  label{ font-size: 18px !important; }
+}
+
+
+/* Celulares angostos (360px y menos): el botón de Google se ajusta
+   un poco para que el texto nunca se corte. */
+@media (max-width: 395px){
+  #btnGoogle, #btnGoogleLogin{
+    font-size: 20px !important;
+    padding: 20px 8px !important;
+    gap: 8px !important;
+  }
+  .googleG{ width: 36px !important; height: 36px !important; padding: 6px; }
+}
+
+/* Pantallas muy angostas (iPhone SE y similares) */
+@media (max-width: 345px){
+  #btnGoogle, #btnGoogleLogin{ font-size: 17px !important; padding: 18px 6px !important; gap: 6px !important; }
+  .googleG{ width: 32px !important; height: 32px !important; padding: 5px; }
+}
+
+/* Respeta a quien pidió menos movimiento en su teléfono */
+@media (prefers-reduced-motion: reduce){
+  .card{ animation: none !important; }
+  .gm-nube-txt.gm-escribiendo::after{ animation: none !important; }
+}
+</style>
+
+<script id="gmNubeJS">
+/* ═══════════════════════════════════════════════════════════════════
+   MÁQUINA DE ESCRIBIR DE LA NUBE
+   Espera a que el splash se vaya, escribe el texto letra por letra
+   de a 2 filas, y al terminar esconde la nube completa.
+   No toca ningún otro script de la página.
+   ═══════════════════════════════════════════════════════════════════ */
+(function(){
+  "use strict";
+
+  var TEXTO = "Ingresa tu e-mail o teléfono para iniciar sesión.";
+
+  var MS_LETRA    = 42;   // velocidad de tecleo (más alto = más lento)
+  var MS_LEER     = 900;  // pausa para alcanzar a leer las 2 filas
+  var MS_BORRAR   = 280;  // lo que demora el desvanecido entre bloques
+  var MS_FINAL    = 2000; // pausa antes de que se vaya la nube
+  var TOPE_SPLASH = 7000; // máximo que esperamos al splash
+
+  var hero = document.getElementById("gmHero");
+  var nube = document.getElementById("gmNube");
+  var caja = document.getElementById("gmNubeTxt");
+  if (!hero || !nube || !caja) return;
+
+  var yaCorrio = false;
+
+  function menosMovimiento(){
+    try {
+      return window.matchMedia &&
+             window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch(e){ return false; }
+  }
+
+  // ── ¿El splash ya se fue? ──
+  function splashFuera(){
+    var s = document.getElementById("splash-screen");
+    if (!s) return true;
+    if (s.style.display === "none") return true;
+    try {
+      var cs = getComputedStyle(s);
+      if (cs.display === "none" || cs.visibility === "hidden") return true;
+      if (parseFloat(cs.opacity) === 0) return true;
+    } catch(e){}
+    return false;
+  }
+
+  // ── Partir el texto en bloques que ocupen como máximo 2 filas ──
+  function calcularBloques(){
+    var cs = getComputedStyle(caja);
+    var medidor = document.createElement("div");
+    medidor.style.cssText =
+      "position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;" +
+      "white-space:normal;word-break:normal;";
+    medidor.style.width         = caja.clientWidth + "px";
+    medidor.style.fontFamily    = cs.fontFamily;
+    medidor.style.fontSize      = cs.fontSize;
+    medidor.style.fontWeight    = cs.fontWeight;
+    medidor.style.lineHeight    = cs.lineHeight;
+    medidor.style.letterSpacing = cs.letterSpacing;
+    medidor.style.textAlign     = cs.textAlign;
+    document.body.appendChild(medidor);
+
+    var alturaFila = parseFloat(cs.lineHeight);
+    if (!alturaFila || isNaN(alturaFila)) alturaFila = parseFloat(cs.fontSize) * 1.45;
+    var tope = alturaFila * 2 + 2;   // 2 filas + un pelito de holgura
+
+    var palabras = TEXTO.split(" ");
+    var bloques = [], actual = "";
+
+    for (var i = 0; i < palabras.length; i++){
+      var prueba = actual ? (actual + " " + palabras[i]) : palabras[i];
+      medidor.textContent = prueba;
+      if (medidor.offsetHeight > tope && actual){
+        bloques.push(actual);
+        actual = palabras[i];
+      } else {
+        actual = prueba;
+      }
+    }
+    if (actual) bloques.push(actual);
+
+    if (medidor.parentNode) medidor.parentNode.removeChild(medidor);
+    return bloques.length ? bloques : [TEXTO];
+  }
+
+  // ── Escribir un bloque letra por letra ──
+  function escribirBloque(texto, alTerminar){
+    var i = 0;
+    caja.classList.remove("gm-fade");
+    caja.classList.add("gm-escribiendo");
+    caja.textContent = "";
+
+    (function paso(){
+      if (i <= texto.length){
+        caja.textContent = texto.slice(0, i);
+        i++;
+        setTimeout(paso, MS_LETRA);
+        return;
+      }
+      caja.classList.remove("gm-escribiendo");
+      setTimeout(alTerminar, MS_LEER);
+    })();
+  }
+
+  // ── Recorrer todos los bloques, uno tras otro ──
+  function recorrer(bloques, idx){
+    if (idx >= bloques.length){ cerrarNube(); return; }
+
+    escribirBloque(bloques[idx], function(){
+      var ultimo = (idx === bloques.length - 1);
+      if (ultimo){ cerrarNube(); return; }
+      caja.classList.add("gm-fade");            // se va suave y rápido
+      setTimeout(function(){ recorrer(bloques, idx + 1); }, MS_BORRAR);
+    });
+  }
+
+  // ── Al final: se va la nube completa y queda solo el formulario ──
+  function cerrarNube(){
+    setTimeout(function(){
+      // Solo se esconde: NO se usa display:none, para que el espacio
+      // siga reservado y el formulario no se mueva de su lugar.
+      hero.classList.add("gm-hero-fin");
+    }, MS_FINAL);
+  }
+
+  // ── Arranque ──
+  function arrancar(){
+    if (yaCorrio) return;
+    yaCorrio = true;
+
+    nube.classList.add("gm-nube-lista");
+
+    // Si el usuario pidió menos movimiento: se muestra el texto y se va.
+    if (menosMovimiento()){
+      var bl = calcularBloques();
+      caja.textContent = bl[0];
+      setTimeout(cerrarNube, 2600);
+      return;
+    }
+
+    // Pequeña espera para que la nube termine de aparecer y medir bien
+    setTimeout(function(){
+      recorrer(calcularBloques(), 0);
+    }, 420);
+  }
+
+  // Esperar a que el splash se vaya (con tope de paciencia)
+  function esperarSplash(){
+    var t0 = Date.now();
+    if (splashFuera()){ arrancar(); return; }
+    var reloj = setInterval(function(){
+      if (splashFuera() || (Date.now() - t0) > TOPE_SPLASH){
+        clearInterval(reloj);
+        arrancar();
+      }
+    }, 120);
+  }
+
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", esperarSplash);
+  } else {
+    esperarSplash();
+  }
+})();
+</script>
+
+
+<style id="gmIngresarAjustesCSS">
+/* ═══════════════════════════════════════════════════════════════════
+   AJUSTES PROPIOS DE INGRESAR
+   Aquí los textos son más largos que en Crear cuenta ("Iniciar sesión
+   con Google", el placeholder con e-mail Y teléfono), así que necesitan
+   un tamaño un poco menor para no partirse feo ni cortarse.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 720px), (hover: none) and (pointer: coarse){
+
+  /* "Iniciar sesión con Google" es largo: se acomoda en 2 líneas */
+  #btnGoogleLogin{
+    font-size: 21px !important;
+    padding: 20px 10px !important;
+    line-height: 1.25 !important;
+  }
+  .googleG{ width: 38px !important; height: 38px !important; padding: 6px; }
+
+  /* El placeholder lleva e-mail Y teléfono: se achica para que quepa */
+  #ident::placeholder{ font-size: 19px !important; }
+
+  /* Modal de recuperar contraseña: también con letra grande */
+  #rcModal .rc-titulo{ font-size: 30px !important; }
+  #rcModal .rc-subtitulo{ font-size: 22px !important; line-height: 1.4 !important; }
+  #rcModal .rc-hint{ font-size: 21px !important; }
+  #rcModal label{ font-size: 26px !important; }
+  #rcModal .input{ font-size: 25px !important; }
+  #rcModal .input::placeholder{ font-size: 21px !important; }
+  #rcBtnEnviar, #rcBtnVerif, #rcBtnGuardar{ font-size: 26px !important; }
+  #rcBack2, #rcBtnReenviar{ font-size: 21px !important; }
+  #rcBtnCerrar{ font-size: 30px !important; }
+  .toast-rc{ font-size: 22px !important; }
+
+  /* Modal "abrir en Chrome": mismo trato */
+  #wvModal .wv-title{ font-size: 27px !important; }
+  #wvModal .wv-body{ font-size: 22px !important; line-height: 1.45 !important; }
+  #wvModal .wv-url{ font-size: 18px !important; }
+  #wvBtnCopiar, #wvBtnCerrar{ font-size: 23px !important; }
+}
+
+/* Pantallas angostas */
+@media (max-width: 395px){
+  #btnGoogleLogin{ font-size: 18px !important; padding: 18px 8px !important; }
+  .googleG{ width: 34px !important; height: 34px !important; padding: 5px; }
+  #ident::placeholder{ font-size: 17px !important; }
+}
+</style>
+
+
+<style id="gmBotonGoogleGrandeCSS">
+/* ═══════════════════════════════════════════════════════════════════
+   BOTÓN "INICIAR SESIÓN CON GOOGLE" — LETRA GRANDE EN CELULAR
+
+   El texto es largo, así que el navegador lo partía en 3 o 4 líneas
+   feas ("INICIAR / SESIÓN CON / GOOGLE"). Ahora el salto está fijo en
+   el HTML (Iniciar sesión / con Google) y cada línea va sin cortes,
+   de modo que la letra puede crecer mucho más.
+
+   El tamaño se calcula según el ancho de la pantalla: crece todo lo
+   que se pueda sin que el texto se salga nunca del botón.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.gm-btn-txt{
+  display: inline-block;
+  white-space: nowrap;   /* solo respeta el salto que pusimos a mano */
+  text-align: center;
+  line-height: 1.18;
+}
+
+@media (max-width: 720px), (hover: none) and (pointer: coarse){
+  #btnGoogleLogin{
+    /* Crece con la pantalla: en un celular normal queda ~25px y en
+       uno grande llega a 32px, sin desbordarse jamás. */
+    font-size: clamp(17px, 6vw, 32px) !important;
+    padding: 20px 8px !important;
+    gap: 9px !important;
+    line-height: 1.18 !important;
+    letter-spacing: .4px !important;
+  }
+  #btnGoogleLogin .googleG{
+    width: 36px !important;
+    height: 36px !important;
+    padding: 6px;
+    flex: 0 0 auto;
+  }
+}
+
+/* Pantallas muy angostas: se deja que el texto fluya solo, así nunca
+   se corta aunque el teléfono sea muy pequeño. */
+@media (max-width: 355px){
+  #btnGoogleLogin{ font-size: 19px !important; padding: 18px 6px !important; }
+  #btnGoogleLogin .gm-btn-txt{ white-space: normal !important; }
+  #btnGoogleLogin .googleG{ width: 32px !important; height: 32px !important; }
+}
+</style>
+
+<script id="gmGoogleAntiBloqueoJS">
+/* ═══════════════════════════════════════════════════════════════════
+   EL BOTÓN DE GOOGLE NUNCA SE QUEDA BLOQUEADO
+
+   Al tocar el botón, la página lo deshabilita para evitar doble toque.
+   Se vuelve a habilitar cuando Android avisa el resultado
+   (__onAndroidGoogleEmail / __onAndroidGoogleError).
+
+   El problema: si el usuario cierra el selector de cuentas tocando
+   fuera o con el botón Atrás, Android a veces NO avisa nada. Sin ese
+   aviso el botón se quedaba apagado y había que recargar la página.
+
+   Esta red de seguridad lo vuelve a encender cuando el usuario
+   regresa a la pantalla, salvo que haya una cuenta ya elegida y en
+   proceso de validarse (ahí sí conviene esperar).
+
+   No reemplaza nada: solo escucha y repara.
+   ═══════════════════════════════════════════════════════════════════ */
+(function(){
+  "use strict";
+
+  var btn = document.getElementById("btnGoogleLogin");
+  if (!btn) return;
+
+  var TOPE_MS    = 1000;   // si no llega ningún aviso, se reactiva casi al toque
+  var GRACIA_MS  = 1200;   // margen para que el aviso de Android llegue primero
+
+  var esperando  = false;  // se tocó el botón y aún no hay respuesta
+  var validando  = false;  // ya se eligió cuenta: el servidor está trabajando
+  var relojTope  = null;
+
+  function reactivar(motivo){
+    if (!esperando || validando) return;
+    if (!btn.disabled){ esperando = false; return; }
+    btn.disabled = false;
+    esperando = false;
+    if (relojTope){ clearTimeout(relojTope); relojTope = null; }
+  }
+
+  // ── Si el usuario vuelve a la pantalla, damos un respiro y reparamos ──
+  function alVolver(){
+    if (!esperando) return;
+    setTimeout(function(){ reactivar("regreso"); }, GRACIA_MS);
+  }
+
+  document.addEventListener("visibilitychange", function(){
+    if (!document.hidden) alVolver();
+  });
+  window.addEventListener("focus",   alVolver);
+  window.addEventListener("pageshow", alVolver);
+
+  // ── Marcar que estamos esperando (este listener corre después del
+  //    que ya existía, así que no interfiere con él) ──
+  btn.addEventListener("click", function(){
+    esperando = true;
+    validando = false;
+    if (relojTope) clearTimeout(relojTope);
+    relojTope = setTimeout(function(){ reactivar("tope"); }, TOPE_MS);
+  });
+
+  // ── Envolver los avisos de Android para saber en qué punto vamos ──
+  //    Se conserva el comportamiento original: solo se añade la marca.
+  var emailOriginal = window.__onAndroidGoogleEmail;
+  if (typeof emailOriginal === "function"){
+    window.__onAndroidGoogleEmail = function(){
+      validando = true;               // hay cuenta elegida: no interrumpir
+      if (relojTope){ clearTimeout(relojTope); relojTope = null; }
+      try { return emailOriginal.apply(this, arguments); }
+      finally {
+        // Si la validación falla, el código original ya reactiva el botón.
+        // Se libera la marca un poco después por si acaso.
+        setTimeout(function(){
+          validando = false;
+          if (btn.disabled) esperando = true;
+        }, 12000);
+      }
+    };
+  }
+
+  var errorOriginal = window.__onAndroidGoogleError;
+  if (typeof errorOriginal === "function"){
+    window.__onAndroidGoogleError = function(){
+      validando = false;
+      esperando = false;
+      if (relojTope){ clearTimeout(relojTope); relojTope = null; }
+      return errorOriginal.apply(this, arguments);
+    };
+  }
+
+  // ── Última malla: cada 2 segundos, si el botón lleva mucho apagado
+  //    y la pantalla está a la vista, se enciende de nuevo. ──
+  setInterval(function(){
+    if (!esperando || validando) return;
+    if (document.hidden) return;
+    if (!btn.disabled){ esperando = false; return; }
+  }, 2000);
+})();
+</script>
+
+
+<style id="gmModalRecuperarCSS">
+/* ═══════════════════════════════════════════════════════════════════
+   1) "¿NO TIENES CUENTA?" Y SUS DOS BOTONES, MUY GRANDES
+   2) MODAL "RECUPERAR CONTRASEÑA" CON EL MISMO DISEÑO QUE EL BLOQUE
+      DE INICIAR SESIÓN (borde RGB en movimiento, fondo oscuro,
+      botones iguales a "Continuar") Y TODO EL TEXTO MUY GRANDE
+
+   Va al final del <body> a propósito: se monta encima sin borrar una
+   sola regla vieja. Para volver atrás, se borra este bloque entero.
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+/* ══ 1) EL MODAL COPIA EL DISEÑO DEL BLOQUE DE INICIAR SESIÓN ══════ */
+
+/* La caja exterior = la tarjeta (.card): mismo degradado arcoíris
+   recorriendo la orilla, con la misma animación de 7 segundos. */
+#rcModal{
+  background:
+    linear-gradient(#111129, #0a0a1e) padding-box,
+    linear-gradient(115deg,
+      #22e3d0 0%, #4b6bff 16%, #a855f7 32%, #ff2d95 48%, #bced1c 64%,
+      #22e3d0 80%, #4b6bff 100%) border-box !important;
+  background-size: auto, 300% 100% !important;
+  border: 3px solid transparent !important;
+  border-radius: 28px !important;
+  box-shadow:
+    0 0 30px rgba(168,85,247,.30),
+    0 22px 54px rgba(0,0,0,.6) !important;
+  animation: gmBordeRGB 7s linear infinite;
+}
+
+/* La caja interior = el panel (.panel): fondo oscuro y borde violeta */
+#rcModal .rc-inner{
+  background: #0d0d24 !important;
+  border: 1px solid rgba(168,85,247,.28) !important;
+  border-radius: 22px !important;
+  box-shadow: inset 0 0 22px rgba(168,85,247,.07) !important;
+}
+
+/* El fondo que tapa la página, igual de oscuro que los otros modales */
+#rcOverlay{ background: rgba(4,2,12,.82) !important; }
+
+/* Títulos y textos con los colores de la app */
+#rcModal .rc-titulo{
+  font-family: "Roboto", system-ui, -apple-system, Segoe UI, Arial, sans-serif !important;
+  color: #9dffdc !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 12px rgba(157,255,220,.55) !important;
+}
+#rcModal .rc-subtitulo,
+#rcModal .rc-hint{ color: #a8a7cf !important; }
+#rcModal label{ color: #9dffdc !important; }
+
+/* La ✕ de cerrar, como en los demás modales */
+#rcBtnCerrar{
+  background: rgba(255,45,149,.18) !important;
+  color: #ff2d95 !important;
+  border: 1px solid rgba(255,45,149,.5) !important;
+}
+
+
+/* Los 3 botones del modal, idénticos a "Continuar".
+   Hay que nombrarlos por su ID: más arriba, el bloque de "color
+   dinámico" les fija el fondo por ID y un ID le gana a la clase
+   .primary, así que si no se hace así se quedan de color plano. */
+#rcBtnEnviar,
+#rcBtnVerif,
+#rcBtnGuardar{
+  background:
+    linear-gradient(#08081a, #08081a) padding-box,
+    linear-gradient(115deg,#22e3d0 0%,#4b6bff 22%,#a855f7 48%,#ff2d95 74%,#bced1c 100%) border-box !important;
+  border: 2px solid transparent !important;
+  border-radius: 999px !important;
+  border-color: transparent !important;
+  color: #c9ffd8 !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .8px !important;
+  text-shadow: 0 0 10px rgba(157,255,220,.8) !important;
+  box-shadow: 0 0 18px rgba(168,85,247,.35), 0 8px 22px rgba(0,0,0,.5) !important;
+}
+#rcBtnEnviar:hover,
+#rcBtnVerif:hover,
+#rcBtnGuardar:hover{
+  box-shadow: 0 0 26px rgba(255,45,149,.5), 0 8px 22px rgba(0,0,0,.5) !important;
+}
+#rcBtnEnviar:active,
+#rcBtnVerif:active,
+#rcBtnGuardar:active{ transform: scale(.975) !important; }
+#rcBtnEnviar:disabled,
+#rcBtnVerif:disabled,
+#rcBtnGuardar:disabled{ opacity: .55 !important; box-shadow: none !important; }
+
+/* Los dos secundarios del modal, con el mismo aspecto de píldora */
+#rcBack2,
+#rcBtnReenviar{
+  background:
+    linear-gradient(#08081a, #08081a) padding-box,
+    linear-gradient(115deg,#22e3d0 0%,#4b6bff 22%,#a855f7 48%,#ff2d95 74%,#bced1c 100%) border-box !important;
+  border: 2px solid transparent !important;
+  border-radius: 999px !important;
+  color: #c9ffd8 !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+  text-shadow: 0 0 10px rgba(157,255,220,.8) !important;
+  box-shadow: 0 0 18px rgba(168,85,247,.35) !important;
+}
+
+/* Los campos del modal, como los de iniciar sesión */
+#rcModal .input{
+  background: #0b0b20 !important;
+  color: #ecebff !important;
+  border: 2px solid rgba(168,85,247,.38) !important;
+}
+#rcModal .input::placeholder{ color: #6e6d96 !important; }
+#rcModal .input:focus{
+  border-color: #22e3d0 !important;
+  box-shadow: 0 0 0 4px rgba(34,227,208,.16), 0 0 18px rgba(34,227,208,.3) !important;
+}
+#rcModal .passToggle{
+  background: #14143a !important;
+  border: 1px solid rgba(168,85,247,.45) !important;
+  color: #9dffdc !important;
+}
+#rcModal .toast-rc{
+  background: #14143a !important;
+  color: #ecebff !important;
+  border: 1px solid rgba(255,45,149,.45) !important;
+}
+
+
+/* ══ 2) EN CELULAR: TODO MUY GRANDE ════════════════════════════════ */
+@media (max-width: 720px), (hover: none) and (pointer: coarse){
+
+  /* ── "¿No tienes cuenta?" + "Crear cuenta" + "¿Olvidaste tu contraseña?" ── */
+  .below{
+    font-size: 26px !important;
+    font-weight: 800 !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    margin-top: 22px !important;
+  }
+  .below span{ font-size: 26px !important; }
+
+  #goCrear,
+  #goRecuperar{
+    font-size: 26px !important;
+    padding: 16px 26px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* ── El modal, con sitio de sobra ── */
+  #rcOverlay{ padding: 14px !important; }
+  #rcModal{
+    max-width: 100% !important;
+    padding: 34px 16px 20px !important;
+    border-radius: 32px !important;
+    border-width: 4px !important;
+  }
+  #rcModal .rc-inner{
+    padding: 24px 18px !important;
+    border-radius: 26px !important;
+  }
+
+  /* ── Textos del modal ── */
+  #rcModal .rc-titulo{
+    font-size: 34px !important;
+    line-height: 1.2 !important;
+    margin: 0 0 10px !important;
+    padding-right: 50px !important;   /* deja sitio a la ✕ */
+  }
+  #rcModal .rc-subtitulo{
+    font-size: 24px !important;
+    line-height: 1.42 !important;
+    margin: 0 0 20px !important;
+  }
+  #rcModal label{
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    margin: 18px 0 12px !important;
+  }
+  #rcModal .input{
+    font-size: 27px !important;
+    padding: 24px 18px !important;
+    border-radius: 16px !important;
+  }
+  #rcModal .input::placeholder{ font-size: 24px !important; }
+  #rcModal .rc-hint{
+    font-size: 23px !important;
+    line-height: 1.45 !important;
+    margin-top: 18px !important;
+  }
+  #rcModal .toast-rc{
+    font-size: 23px !important;
+    padding: 16px !important;
+  }
+
+  /* ── Los botones principales: idénticos a "Continuar" ── */
+  #rcBtnEnviar,
+  #rcBtnVerif,
+  #rcBtnGuardar{
+    font-size: 30px !important;
+    padding: 26px 14px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* ── Los secundarios, grandes pero un escalón menos ── */
+  #rcBack2,
+  #rcBtnReenviar{
+    font-size: 23px !important;
+    padding: 14px 22px !important;
+  }
+
+  /* ── El ojito de ver contraseña ── */
+  #rcModal .passToggle{
+    width: 66px !important;
+    height: 66px !important;
+    font-size: 30px !important;
+  }
+  #rcModal .passWrap .input{ padding-right: 82px !important; }
+  /* Al lado del ojito queda menos sitio: el texto de ejemplo se achica
+     para que se lea completo y no aparezca cortado. */
+  #rcModal .passWrap .input::placeholder{ font-size: 20px !important; }
+
+  /* ── La ✕ de cerrar, más grande y fácil de tocar ── */
+  #rcBtnCerrar{
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 30px !important;
+    top: 16px !important;
+    right: 16px !important;
+  }
+}
+
+/* Pantallas angostas: se baja un punto para que nada se corte */
+@media (max-width: 380px){
+  #goCrear, #goRecuperar{ font-size: 22px !important; padding: 14px 18px !important; }
+  .below, .below span{ font-size: 22px !important; }
+  #rcModal .rc-titulo{ font-size: 28px !important; }
+  #rcBtnEnviar, #rcBtnVerif, #rcBtnGuardar{ font-size: 24px !important; padding: 22px 10px !important; }
+  #rcModal label{ font-size: 24px !important; }
+  #rcModal .input{ font-size: 23px !important; }
+}
+
+/* Celular acostado: el modal se puede desplazar y no se sale */
+@media (max-height: 620px) and (hover: none) and (pointer: coarse){
+  #rcOverlay{ align-items: flex-start !important; overflow-y: auto !important; }
+  #rcModal{ margin: 10px auto !important; padding: 26px 14px 16px !important; }
+  #rcModal .rc-titulo{ font-size: 24px !important; }
+  #rcModal .rc-subtitulo{ font-size: 17px !important; margin-bottom: 12px !important; }
+  #rcModal label{ font-size: 18px !important; margin: 10px 0 8px !important; }
+  #rcModal .input{ font-size: 18px !important; padding: 14px !important; }
+  #rcBtnEnviar, #rcBtnVerif, #rcBtnGuardar{ font-size: 19px !important; padding: 15px 10px !important; }
+  #rcBack2, #rcBtnReenviar{ font-size: 16px !important; padding: 10px 16px !important; }
+  #rcModal .passToggle{ width: 46px !important; height: 46px !important; font-size: 20px !important; }
+}
+
+/* Respeta a quien pidió menos movimiento en su teléfono */
+@media (prefers-reduced-motion: reduce){
+  #rcModal{ animation: none !important; }
+}
+</style>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     🚪 TRANSICIÓN ENTRE PÁGINAS (bloque NUEVO, 100% aditivo)
+     PROBLEMA: al volver a la portada (index es la página más pesada), el
+     teléfono quita su pantalla negra de carga ANTES de que llegue la página
+     nueva, y por un par de segundos se volvía a ver la página anterior
+     (parecía que se recargaba) y recién después aparecía index.
+     SOLUCIÓN: apenas el usuario sale de esta página (barra de abajo, menú,
+     cualquier botón que cambie de página), se muestra al tiro una COPIA del
+     mismo splash de la app (logo + partículas + barra de carga). Así, mientras
+     la página nueva llega, lo que se ve es la pantalla de carga, nunca la
+     página anterior.
+     • Es una copia: el splash original y sus tiempos no se tocan.
+     • Si un toque no cambia de página, la copia se quita sola a los 4 s; si
+       la página nueva nunca llega (sin señal), a los 25 s. Los links a
+       WhatsApp y redes no la activan.
+     • Volver con "atrás" a una página guardada en memoria: se quita al tiro.
+     v2: además anota a qué página se va (barra/menú), para que la "guardia"
+     del inicio del <body> sepa reconocer si el teléfono vuelve a abrir esta
+     misma página por un momento antes de la pedida, y la tape con el splash.
+     ══════════════════════════════════════════════════════════════════════ -->
+<script id="gmTransicionJS">
+(function(){
+  "use strict";
+  if (window.__gmTransicion) return;
+  window.__gmTransicion = true;
+  var copia = null, tiempo = 0, saliendo = false;
+  var K = "GM_TRANSICION_V1";
+  var PAG = String(window.__gmPag || (document.body && document.body.getAttribute("data-page")) || "").toLowerCase();
+  // Restos de una copia guardada de la página (no deben verse nunca)
+  try{ var viejos = document.querySelectorAll("[data-gm-transicion]"); for (var i = 0; i < viejos.length; i++) viejos[i].parentNode.removeChild(viejos[i]); }catch(e){}
+  function borrarNota(){ try{ sessionStorage.removeItem(K); }catch(e){} try{ localStorage.removeItem(K); }catch(e){} }
+  function leerNota(){
+    var a = null, b = null;
+    try{ a = JSON.parse(sessionStorage.getItem(K) || "null"); }catch(e){}
+    try{ b = JSON.parse(localStorage.getItem(K) || "null"); }catch(e){}
+    return (a && b) ? ((a.t >= b.t) ? a : b) : (a || b);
+  }
+  // Llegó una página de verdad (no la fantasma): la nota ya cumplió
+  if (!window.__gmTrFantasma){
+    try{ var n0 = leerNota(); if (n0 && (n0.desde !== PAG || !n0.t || (Date.now() - n0.t) > 15000)) borrarNota(); }catch(e){}
+  }
+  // 🚪 Aviso a la app Android: "esta página ya llegó" (retira su capa de transición)
+  //    v2: se avisa recién cuando la página YA se dibujó en pantalla (2 cuadros
+  //    después de armarse), no apenas se lee el código. Respaldo a los 6 s.
+  try{
+    if (PAG && window.AndroidBridge && typeof window.AndroidBridge.paginaLista === "function"){
+      var avisado = false;
+      var avisar = function(){ if (avisado) return; avisado = true; try{ window.AndroidBridge.paginaLista(PAG); }catch(e){} };
+      var trasPintar = function(){
+        try{ requestAnimationFrame(function(){ requestAnimationFrame(function(){ setTimeout(avisar, 60); }); }); }catch(e){ setTimeout(avisar, 300); }
+      };
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", trasPintar); else trasPintar();
+      setTimeout(avisar, 6000);
+    }
+  }catch(e){}
+  // A qué página lleva un link (?page=...). Sin page = portada (index)
+  function paginaDe(u){
+    try{
+      var m = /[?&]page=([^&#]*)/i.exec(u);
+      var p = m ? decodeURIComponent(m[1]) : "index";
+      p = String(p || "index").toLowerCase().replace(/\.html$/, "").replace(/gift$/, "");
+      if (p === "login") p = "ingrezar";
+      return p || "index";
+    }catch(e){ return ""; }
+  }
+  // ms = cuánto esperar antes de quitar la copia si la página no cambia
+  function tapar(ms){
+    try{
+      ms = (typeof ms === "number") ? ms : 25000;
+      if (saliendo) ms = 25000;   // ya se confirmó que la página se va
+      if (copia){ clearTimeout(tiempo); tiempo = setTimeout(destapar, ms); return; }
+      var s = document.getElementById("splash-screen");
+      if (!s) return;
+      copia = s.cloneNode(true);
+      copia.removeAttribute("class");
+      copia.setAttribute("data-gm-transicion", "1");
+      copia.setAttribute("aria-hidden", "true");
+      var st = copia.style;
+      st.setProperty("display", "flex", "important");
+      st.setProperty("opacity", "1", "important");
+      st.setProperty("visibility", "visible", "important");
+      st.setProperty("animation", "none", "important");
+      st.setProperty("z-index", "2147483646", "important");
+      st.setProperty("pointer-events", "auto", "important");
+      // Si el logo aún no había cargado, no se muestra el ícono de imagen rota
+      var oi = s.querySelector("#splash-logo"), ci = copia.querySelector("#splash-logo");
+      if (ci && (!oi || !oi.complete || !oi.naturalWidth)) ci.style.setProperty("visibility", "hidden", "important");
+      document.body.appendChild(copia);
+      clearTimeout(tiempo);
+      tiempo = setTimeout(destapar, ms);
+    }catch(e){}
+  }
+  function destapar(){
+    clearTimeout(tiempo);
+    try{ if (copia && copia.parentNode) copia.parentNode.removeChild(copia); }catch(e){}
+    copia = null; saliendo = false;
+  }
+  // 1) Cualquier salida de la página (el navegador avisa antes de irse)
+  //    (confirma el cambio de página: la copia queda puesta hasta que llegue la nueva)
+  window.addEventListener("beforeunload", function(){ saliendo = true; tapar(25000); });
+  window.addEventListener("pagehide", function(){ saliendo = true; tapar(25000); });
+  // 2) Barra de abajo y menú: se tapa en el mismo toque (respuesta inmediata)
+  document.addEventListener("click", function(e){
+    try{
+      var el = e.target && e.target.closest && e.target.closest(".nav-item[data-url], .drawer-item[data-url], #drawerPages a[data-url], .drawer-list a[data-url], #drawer a[data-url]");
+      if (!el) return;
+      var u = String(el.getAttribute("data-url") || "").trim();
+      if (!u || /^(#|javascript:|mailto:|tel:)/i.test(u) || /wa\.me|whatsapp|instagram\.com|facebook\.com|tiktok\.com|youtube\.com|youtu\.be/i.test(u)) return;
+      //    Nota de viaje (desde → hacia) para la guardia de la página siguiente
+      try{
+        var hacia = el.classList.contains("active") ? PAG : paginaDe(u);
+        //    🚪 La app Android tapa al tiro con su splash hasta que llegue "hacia"
+        try{ if (hacia && window.AndroidBridge && typeof window.AndroidBridge.iniciarTransicion === "function") window.AndroidBridge.iniciarTransicion(hacia); }catch(e){}
+        if (!window.__gmTrFantasma && PAG && hacia && hacia !== PAG){
+          var nota = JSON.stringify({ desde: PAG, hacia: hacia, t: Date.now() });
+          try{ sessionStorage.setItem(K, nota); }catch(e){}
+          try{ localStorage.setItem(K, nota); }catch(e){}
+        }
+      }catch(e){}
+      //    Si el toque no llegó a cambiar de página (ej. abrió una ventanita),
+      //    la copia se quita sola a los 4 s.
+      setTimeout(function(){ tapar(4000); }, 0);
+    }catch(err){}
+  }, true);
+  // 3) Si se vuelve a esta página con "atrás" (guardada en memoria): se destapa
+  window.addEventListener("pageshow", function(ev){ if (ev && ev.persisted) destapar(); });
+})();
+</script>
+</body>
+</html>

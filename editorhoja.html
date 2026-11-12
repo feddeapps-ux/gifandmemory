@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta name="theme-color" content="#7b2fd0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GIF and Memory">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="config.js"></script>
+<script src="pwa-shim.js"></script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Hoja</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      font-family: 'Roboto', sans-serif;
+      background: #f1f5f9;
+      overflow: hidden;
+    }
+
+    /* ── BARRA SUPERIOR ── */
+    #topBar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 64px;
+      background: linear-gradient(135deg, #11112b 0%, #1e1e4a 100%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      z-index: 100;
+      box-shadow: 0 3px 16px rgba(0,0,0,.4);
+    }
+
+    #topBar .tb-icon {
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+
+    #topBar #nombreHoja {
+      flex: 1;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #mensajeEstado {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 0;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    #mensajeEstado.ok  { color: #86efac; opacity: 1; }
+    #mensajeEstado.err { color: #fca5a5; opacity: 1; }
+
+    #btnGuardar {
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 28px;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(22,163,74,.5);
+      transition: background .15s, transform .1s;
+      white-space: nowrap;
+    }
+    #btnGuardar:hover   { background: #15803d; }
+    #btnGuardar:active  { transform: scale(.96); }
+    #btnGuardar:disabled { opacity: .45; cursor: not-allowed; }
+
+    #btnCerrar {
+      background: rgba(255,255,255,.18);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      width: 46px; height: 46px;
+      font-size: 28px;
+      font-weight: 900;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    #btnCerrar:hover { background: rgba(255,255,255,.32); }
+
+    /* ── ÁREA DE TABLA ── */
+    #scrollArea {
+      position: fixed;
+      top: 64px; left: 0; right: 0; bottom: 56px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #f8fafc;
+    }
+
+    /* ── SPINNER ── */
+    #spinner {
+      display: none;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 15px;
+      color: #64748b;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    #spinner.on { display: block; }
+
+    /* ── TABLA ── */
+    #tbl {
+      border-collapse: collapse;
+      min-width: 100%;
+    }
+    #tbl thead th {
+      background: #11112b;
+      color: #9ca3af;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-align: center;
+      padding: 10px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      white-space: nowrap;
+      border-right: 1px solid rgba(255,255,255,.1);
+      user-select: none;
+    }
+    #tbl thead th.rn { z-index: 6; min-width: 46px; }
+    #tbl td.rn {
+      background: #f1f5f9;
+      color: #94a3b8;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      min-width: 46px;
+      width: 46px;
+      border-right: 2px solid #cbd5e1;
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      user-select: none;
+      padding: 0 4px;
+    }
+    #tbl td {
+      padding: 0;
+      border: 1px solid #e2e8f0;
+      min-width: 160px;
+      vertical-align: middle;
+    }
+    #tbl td input {
+      display: block;
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 12px 14px;
+      font-size: 16px;
+      font-family: 'Roboto', sans-serif;
+      font-weight: 400;
+      color: #0f172a;
+      background: transparent;
+      min-height: 50px;
+    }
+    #tbl td input:focus {
+      background: #dbeafe;
+      box-shadow: inset 0 0 0 2.5px #2563eb;
+    }
+    #tbl tbody tr:nth-child(odd)  td:not(.rn) { background: #fff; }
+    #tbl tbody tr:nth-child(even) td:not(.rn) { background: #f0f4ff; }
+    #tbl tbody tr:hover           td:not(.rn) { background: #e0ecff; }
+
+    /* ── BARRA INFERIOR ── */
+    #bottomBar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 56px;
+      background: #fff;
+      border-top: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 14px;
+    }
+    #btnAgregarFila {
+      background: transparent;
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 24px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    #btnAgregarFila:hover { border-color: #94a3b8; background: #f1f5f9; color: #1e293b; }
+
+    #conteoFilas {
+      font-size: 14px;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-left: auto;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 1px;
+    }
+
+    /* MÓVIL */
+    @media (max-width: 720px) {
+      #topBar #nombreHoja { font-size: 14px !important; }
+      #btnGuardar  { font-size: 20px !important; padding: 13px 18px !important; }
+      #btnCerrar   { width: 50px !important; height: 50px !important; font-size: 30px !important; }
+      #tbl td input { font-size: 20px !important; min-height: 58px !important; }
+      #tbl thead th { font-size: 13px !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA SUPERIOR -->
+  <div id="topBar">
+    <button id="btnCerrar" type="button" onclick="window.close()" title="Cerrar">✕</button>
+    <span class="tb-icon">📊</span>
+    <div id="nombreHoja">Cargando…</div>
+    <div id="mensajeEstado"></div>
+    <button id="btnGuardar" type="button" onclick="guardar()">💾 Guardar</button>
+  </div>
+
+  <!-- TABLA -->
+  <div id="scrollArea">
+    <div id="spinner" class="on">⏳ Cargando hoja…</div>
+    <table id="tbl"></table>
+  </div>
+
+  <!-- BARRA INFERIOR -->
+  <div id="bottomBar">
+    <button id="btnAgregarFila" type="button" onclick="agregarFila()">＋ Agregar fila</button>
+    <div id="conteoFilas">—</div>
+  </div>
+
+  <script>
+    var NOMBRE_HOJA = "";
+    var NUM_COLS    = 0;
+    var GUARDANDO   = false;
+
+    // ── Leer ?hoja= de la URL ──
+    function getParam(name) {
+      var url = window.location.href;
+      name = name.replace(/[\[\]]/g, "\\$&");
+      var rx = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
+      var r  = rx.exec(url);
+      if (!r) return "";
+      if (!r[2]) return "";
+      return decodeURIComponent(r[2].replace(/\+/g, " "));
+    }
+
+    // ── Init ──
+    window.addEventListener("DOMContentLoaded", function() {
+      NOMBRE_HOJA = getParam("hoja");
+      if (!NOMBRE_HOJA) {
+        document.getElementById("spinner").textContent = "❌ Falta parámetro ?hoja=";
+        return;
+      }
+      document.getElementById("nombreHoja").textContent = NOMBRE_HOJA;
+      document.title = "Editor — " + NOMBRE_HOJA;
+
+      // Pedir datos
+      google.script.run
+        .withSuccessHandler(function(res) {
+          document.getElementById("spinner").classList.remove("on");
+          if (!res || !res.ok) {
+            document.getElementById("spinner").textContent = "❌ " + (res ? res.message || "Error" : "Sin respuesta");
+            document.getElementById("spinner").classList.add("on");
+            return;
+          }
+          renderTabla(res.rows, res.numCols);
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById("spinner").textContent = "❌ " + String(err);
+          document.getElementById("spinner").classList.add("on");
+        })
+        .getSheetData(NOMBRE_HOJA);
+    });
+
+    // ── Renderizar tabla ──
+    function renderTabla(filas, numCols) {
+      NUM_COLS = numCols || (filas && filas[0] ? filas[0].length : 1);
+      var tbl  = document.getElementById("tbl");
+
+      function letra(i) {
+        var s = "", n = i;
+        do { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1; } while (n >= 0);
+        return s;
+      }
+
+      var h = "<thead><tr><th class='rn'>#</th>";
+      for (var c = 0; c < NUM_COLS; c++) h += "<th>" + letra(c) + "</th>";
+      h += "</tr></thead><tbody>";
+
+      var F = filas || [];
+      for (var r = 0; r < F.length; r++) {
+        h += "<tr><td class='rn'>" + (r + 1) + "</td>";
+        for (var cc = 0; cc < NUM_COLS; cc++) {
+          var v = (F[r] && F[r][cc] != null) ? String(F[r][cc]) : "";
+          h += "<td><input type='text' value=\"" + esc(v) + "\" data-r='" + r + "' data-c='" + cc + "'></td>";
+        }
+        h += "</tr>";
+      }
+      h += "</tbody>";
+      tbl.innerHTML = h;
+      actualizarConteo();
+    }
+
+    function esc(s) {
+      return String(s || "")
+        .replace(/&/g,"&amp;").replace(/"/g,"&quot;")
+        .replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    // ── Agregar fila ──
+    function agregarFila() {
+      var tbody = document.querySelector("#tbl tbody");
+      if (!tbody) return;
+      var ri = tbody.rows.length;
+      var tr = document.createElement("tr");
+      var h  = "<td class='rn'>" + (ri + 1) + "</td>";
+      for (var ci = 0; ci < NUM_COLS; ci++) {
+        h += "<td><input type='text' value='' data-r='" + ri + "' data-c='" + ci + "'></td>";
+      }
+      tr.innerHTML = h;
+      tbody.appendChild(tr);
+      tr.querySelector("input").focus();
+      actualizarConteo();
+    }
+
+    function actualizarConteo() {
+      var tbody = document.querySelector("#tbl tbody");
+      var n     = tbody ? tbody.rows.length : 0;
+      document.getElementById("conteoFilas").textContent = n + " fila" + (n === 1 ? "" : "s");
+    }
+
+    // ── Recolectar datos ──
+    function recolectar() {
+      var inputs = document.querySelectorAll("#tbl tbody input");
+      var filas  = [];
+      inputs.forEach(function(inp) {
+        var r = parseInt(inp.getAttribute("data-r"), 10);
+        var c = parseInt(inp.getAttribute("data-c"), 10);
+        if (!filas[r]) filas[r] = [];
+        filas[r][c] = inp.value;
+      });
+      return filas;
+    }
+
+    // ── Guardar ──
+    function guardar() {
+      if (GUARDANDO) return;
+      GUARDANDO = true;
+
+      var btn  = document.getElementById("btnGuardar");
+      var msg  = document.getElementById("mensajeEstado");
+      var orig = btn.innerHTML;
+
+      btn.disabled    = true;
+      btn.textContent = "Guardando…";
+      msg.textContent = "";
+      msg.className   = "";
+
+      var filas = recolectar();
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          GUARDANDO    = false;
+          btn.disabled = false;
+          btn.innerHTML = orig;
+          if (res && res.ok) {
+            msg.textContent = "✅ ¡Guardado!";
+            msg.className   = "ok";
+            setTimeout(function() { msg.textContent = ""; msg.className = ""; }, 4000);
+          } else {
+            msg.textContent = "❌ " + (res ? res.message || "Error" : "Sin respuesta");
+            msg.className   = "err";
+          }
+        })
+        .withFailureHandler(function(err) {
+          GUARDANDO    = false;
+          btn.disabled = false;
+          btn.innerHTML = orig;
+          msg.textContent = "❌ " + String(err);
+          msg.className   = "err";
+        })
+        .saveSheetData(NOMBRE_HOJA, filas);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#7b2fd0">
+<title>GIF and Memory</title>
+<style>html,body{margin:0;height:100%;background:#1a0b2e}</style>
+<script>
+/* Enrutador: reemplaza el ?page= de Apps Script. go.html?page=cuenta&x=1 → cuenta.html?x=1 */
+(function(){
+  var ok={index:1,crearcuenta:1,ingrezar:1,carrodecompras:1,cuenta:1,finalizarcompra:1,miscompras:1,misrompecabezas:1,paneldecontrol:1,editorhoja:1};
+  var q=location.search.replace(/^\?/,"").split("&").filter(Boolean),page="index",rest=[];
+  q.forEach(function(p){
+    var i=p.indexOf("="),k=i<0?p:p.slice(0,i),v=i<0?"":decodeURIComponent(p.slice(i+1).replace(/\+/g," "));
+    if(k==="page"){page=v.replace(/\.html$/i,"")||"index";} else rest.push(p);
+  });
+  if(page==="login")page="ingrezar";
+  if(!ok[page])page="index";
+  location.replace(page+".html"+(rest.length?"?"+rest.join("&"):"")+location.hash);
+})();
+</script></head><body></body></html>

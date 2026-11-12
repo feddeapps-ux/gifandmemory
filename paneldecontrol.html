@@ -1,0 +1,4151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="theme-color" content="#7b2fd0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GIF and Memory">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="config.js"></script>
+<script src="pwa-shim.js"></script>
+
+  <base target="_top" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+
+  <link rel="preconnect" href="https://i.imgur.com" crossorigin>
+  <link rel="dns-prefetch" href="https://i.imgur.com">
+  <link rel="preconnect" href="https://imgur.com" crossorigin>
+  <link rel="dns-prefetch" href="https://imgur.com">
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <title>Panel de Control</title>
+
+  <!-- Prevención de pinch-to-zoom (iOS + Android) -->
+  <script>
+  (function () {
+    function onTouchStart(e) {
+      if (e.touches && e.touches.length > 1) e.preventDefault();
+    }
+    function onGestureStart(e) { e.preventDefault(); }
+    document.addEventListener('touchstart', onTouchStart, { passive: false });
+    document.addEventListener('touchmove', function(e) {
+      if (e.touches && e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('gesturestart', onGestureStart);
+    let lastTouch = 0;
+    document.addEventListener('touchend', function (e) {
+      const now = Date.now();
+      if (now - lastTouch <= 300) e.preventDefault();
+      lastTouch = now;
+    }, { passive: false });
+    window.addEventListener('unload', function () {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('gesturestart', onGestureStart);
+    });
+  })();
+  </script>
+
+  <style>
+    /* ===== Base ===== */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+      font-family: "Roboto", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+      color: #111;
+      max-width: 100%;
+      overflow-x: hidden;
+      touch-action: pan-y;
+      -ms-touch-action: pan-y;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-x: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .page { padding-bottom: 40px; }
+
+    /* ===== LED full ancho ===== */
+    .led-fullbleed {
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+    }
+
+    /* ===== Logo overlay fijo sobre la LED ===== */
+    #ledTopWrap { position: relative; }
+
+    #ledBrandLogo {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10060;
+      width: 120px;
+      max-width: 34vw;
+      height: auto;
+      display: none;
+      opacity: 0.75;
+      padding: 0;
+      background: transparent;
+      border-radius: 0;
+      backdrop-filter: none;
+      -webkit-user-drag: none;
+      user-select: none;
+      pointer-events: auto;
+    }
+    @media (max-width: 720px) {
+      #ledBrandLogo { width: 96px; top: 10px; left: 10px; }
+    }
+    #ledBrandLogo:hover { opacity: 1; }
+
+    /* ==============================
+       Acciones arriba (hamburguesa + carrito) SOLO MÓVIL
+       ============================== */
+    #ledQuickActions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10075;
+      display: none;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    /* ==============================
+       Acciones bajo LED SOLO ESCRITORIO
+       ============================== */
+    #ledQuickActionsDesktop {
+      display: none;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 10px 14px 0;
+    }
+
+    @media (min-width: 721px) and (hover: hover) and (pointer: fine) {
+      #ledQuickActionsDesktop {
+        display: flex;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        padding-right: 110px;
+      }
+      #ledQuickActionsDesktop .qa-btn {
+        background: #111827;
+        border: 1px solid rgba(0,0,0,.18);
+        box-shadow: 0 12px 26px rgba(0,0,0,.22);
+      }
+      #ledQuickActionsDesktop .qa-btn svg {
+        stroke: #ffffff;
+        opacity: 1;
+      }
+    }
+
+    .qa-btn {
+      position: relative;
+      width: 46px;
+      height: 46px;
+      border: none;
+      background: rgba(0,0,0,.10);
+      backdrop-filter: blur(2px);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(0,0,0,.18);
+      pointer-events: auto;
+    }
+    .qa-btn svg {
+      width: 26px;
+      height: 26px;
+      stroke: #fff;
+      opacity: .92;
+    }
+    .qa-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #22c55e;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 18px rgba(0,0,0,.25);
+    }
+
+    /* Mostrar SOLO en celulares (GIGANTE) */
+    @media (max-width: 720px), (hover: none) and (pointer: coarse) {
+      #ledQuickActions { display: flex; }
+      .qa-btn {
+        width: 88px;
+        height: 88px;
+        border-radius: 22px;
+        box-shadow: 0 16px 34px rgba(0,0,0,.24);
+      }
+      .qa-btn svg {
+        width: 48px;
+        height: 48px;
+        stroke-width: 2.8;
+      }
+      .qa-badge {
+        top: -10px;
+        right: -10px;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 10px;
+        font-size: 18px;
+        font-weight: 900;
+        box-shadow: 0 12px 22px rgba(0,0,0,.28);
+      }
+    }
+
+    /* ==============================
+       Drawer menú
+       ============================== */
+    #drawerOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      z-index: 10090;
+      display: none;
+    }
+    #appDrawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: min(420px, 86vw);
+      height: 100vh;
+      background: #fff;
+      z-index: 10100;
+      transform: translateX(-102%);
+      transition: transform .25s ease;
+      box-shadow: 14px 0 40px rgba(0,0,0,.25);
+      display: flex;
+      flex-direction: column;
+    }
+    #appDrawer.open { transform: translateX(0); }
+    #drawerOverlay.open { display: block; }
+
+    .drawer-head {
+      background: #f6f7f9;
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid rgba(0,0,0,.08);
+      position: sticky;
+      top: 0;
+    }
+    .drawer-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(0,0,0,.12);
+      cursor: pointer;
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .drawer-welcome {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding-right: 52px;
+    }
+    .drawer-avatar {
+      width: 54px; height: 54px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #6b7280;
+    }
+    .drawer-title { font-weight: 900; font-size: 18px; }
+    .drawer-sub { margin-top: 2px; font-size: 14px; color: #6b7280; }
+    .drawer-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .drawer-actions button {
+      border-radius: 12px;
+      padding: 12px 10px;
+      font-weight: 900;
+      cursor: pointer;
+      border: 2px solid #3b82f6;
+      background: #fff;
+      color: #3b82f6;
+    }
+    .drawer-actions .primary {
+      background: #192130;
+      color: #fff;
+      border-color: #192130;
+    }
+    .drawer-actions button:not(.primary) {
+      background: #dfdff0;
+      color: #000000;
+      border-color: #dfdff0;
+    }
+    .drawer-body { overflow: auto; padding: 10px 0 18px; }
+    .drawer-section {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+    .drawer-section h4 {
+      margin: 10px 14px 8px;
+      font-size: 14px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+    }
+    .drawer-list a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 14px;
+      text-decoration: none;
+      color: #111;
+      font-weight: 800;
+    }
+    .drawer-list a:active { background: rgba(0,0,0,.05); }
+    .drawer-ico {
+      width: 26px; height: 26px;
+      display: grid;
+      place-items: center;
+      color: #111;
+    }
+
+    /* ===== PANTALLA LED ===== */
+    #indicadores {
+      position: relative !important;
+      width: 100% !important;
+      height: 280px !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      display: flex !important;
+      justify-content: stretch !important;
+      align-items: stretch !important;
+      background: repeating-linear-gradient(90deg, #000, #000 10px, #111 10px, #111 20px) !important;
+      transition: height 0.4s ease-in-out !important;
+      box-shadow: 0 0 25px rgba(255,255,255,0.6) !important;
+      border-radius: 0 !important;
+    }
+    #indicadores.modo-video { height: 500px !important; background: #000 !important; }
+    #indicadores span {
+      display: inline-block !important;
+      padding-left: 20% !important;
+      animation: scroll 12s linear infinite, blink 1s infinite alternate !important;
+      font-family: 'VT323', monospace !important;
+      font-size: 90px !important;
+      font-weight: 900 !important;
+      letter-spacing: 2px !important;
+      color: #ddfacd !important;
+      text-shadow: 0 0 4px #ddfacd !important;
+      white-space: nowrap;
+    }
+    @keyframes scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.75; } 100% { opacity: 1; } }
+
+    #videoLED-container, #imgContainerLED {
+      position: absolute !important;
+      top: 0 !important; left: 0 !important;
+      width: 100% !important; height: 100% !important;
+      display: flex !important;
+      justify-content: stretch !important;
+      align-items: stretch !important;
+      overflow: hidden !important;
+      border-radius: 0 !important;
+      background: #000 !important;
+    }
+    #videoLED, #imgLED {
+      width: 100% !important;
+      height: 100% !important;
+      display: block !important;
+      min-width: 100% !important;
+      min-height: 100% !important;
+      object-fit: cover !important;
+      object-position: center center !important;
+      border: none !important;
+      cursor: pointer !important;
+    }
+
+    /* Texto "Pincha aquí" independiente */
+    #ledPinchaAquiWrap {
+      position: absolute !important;
+      bottom: 10px !important;
+      left: 0 !important;
+      width: 100% !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+      pointer-events: auto !important;
+      z-index: 20 !important;
+      text-align: left !important;
+      display: none;
+    }
+    #ledPinchaAquiText {
+      display: inline-block !important;
+      padding-left: 0 !important;
+      font-family: 'Orbitron', sans-serif !important;
+      font-size: 46px !important;
+      font-weight: bold !important;
+      color: #c9ffda !important;
+      animation: scrollLinkText 8s linear infinite !important;
+      will-change: transform;
+      user-select: none;
+    }
+    @keyframes scrollLinkText {
+      0%   { transform: translateX(100vw); }
+      100% { transform: translateX(-100%); }
+    }
+    @media (max-width: 768px) {
+      #indicadores.modo-video { height: 500px !important; }
+      #indicadores span { font-size: 60px !important; }
+      #ledPinchaAquiText { font-size: 46px !important; }
+    }
+
+    /* ===== DRAWER GIGANTE en móvil ===== */
+    @media (max-width: 720px), (hover: none) and (pointer: coarse) {
+      #appDrawer { width: min(520px, 92vw) !important; }
+      .drawer-head { padding: 18px 18px 16px !important; }
+      .drawer-close {
+        width: 64px !important; height: 64px !important;
+        font-size: 40px !important; border-radius: 16px !important;
+      }
+      .drawer-avatar { width: 78px !important; height: 78px !important; font-size: 34px !important; }
+      .drawer-title { font-size: 26px !important; }
+      .drawer-sub { font-size: 30px !important; line-height: 1.25 !important; }
+      .drawer-actions { gap: 14px !important; margin-top: 16px !important; }
+      .drawer-actions button { padding: 18px 14px !important; font-size: 24px !important; border-radius: 16px !important; }
+      .drawer-section h4 { font-size: 30px !important; margin: 14px 18px 10px !important; }
+      .drawer-list a { padding: 18px 18px !important; gap: 14px !important; font-size: 22px !important; }
+      .drawer-ico { width: 40px !important; height: 40px !important; font-size: 28px !important; }
+    }
+
+    /* ============================================================
+       PANTALLA PREPARAR — LED independiente (200px), sobre lpWrap
+    ============================================================ */
+    #prepWrap {
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      position: relative;
+      height: 200px;
+      background: repeating-linear-gradient(90deg, #0a0a0a, #0a0a0a 10px, #111 10px, #111 20px);
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(255, 220, 50, 0.35);
+      display: flex;
+      flex-direction: column;
+      justify-content: stretch;
+    }
+
+    /* Track deslizante horizontal, igual que lpTrack */
+    #prepTrack {
+      display: flex;
+      height: 100%;
+      transition: transform .6s cubic-bezier(.4,0,.2,1);
+      will-change: transform;
+    }
+
+    /* Cada slide ocupa 100% del wrap */
+    .prep-slide {
+      flex: 0 0 auto;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 0 32px;
+      position: relative;
+    }
+
+    /* Contenido del slide: texto enorme Orbitron */
+    .prep-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+    }
+
+    .prep-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fde68a;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0.75;
+    }
+
+    .prep-orden {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+      color: #fef3c7;
+      letter-spacing: 2px;
+    }
+
+    .prep-producto {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(26px, 5vw, 54px);
+      font-weight: 900;
+      color: #fbbf24;
+      text-shadow: 0 0 18px rgba(251,191,36,0.6), 0 0 4px #fbbf24;
+      letter-spacing: 2px;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      animation: prepBlink 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes prepBlink {
+      0%   { opacity: 1; text-shadow: 0 0 18px rgba(251,191,36,0.6); }
+      100% { opacity: 0.75; text-shadow: 0 0 8px rgba(251,191,36,0.3); }
+    }
+
+    /* Botón PREPARADO */
+    .prep-btn {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: #fbbf24;
+      color: #11112b;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 24px;
+      cursor: pointer;
+      margin-top: 4px;
+      box-shadow: 0 0 14px rgba(251,191,36,0.5);
+      transition: transform .1s, opacity .1s;
+      flex-shrink: 0;
+    }
+    .prep-btn:active   { transform: scale(.95); opacity: .8; }
+    .prep-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* Flechas */
+    .prep-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      border: none;
+      background: transparent;
+      color: #fbbf24;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 8px 12px;
+      opacity: 0.5;
+      transition: opacity .2s;
+    }
+    .prep-arrow:hover { opacity: 1; }
+    .prep-arrow.left  { left: 6px; }
+    .prep-arrow.right { right: 6px; }
+
+    /* Dots */
+    .prep-dots {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      z-index: 20;
+    }
+    .prep-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(251,191,36,0.35);
+      transition: background .3s;
+    }
+    .prep-dot.active { background: #fbbf24; }
+
+    /* Estado vacío / cargando */
+    .prep-estado {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 8px;
+      color: rgba(251,191,36,0.5);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-align: center;
+    }
+    .prep-estado-icon { font-size: 36px; }
+
+    /* Contador */
+    .prep-counter {
+      position: absolute;
+      top: 8px;
+      right: 14px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(251,191,36,0.55);
+      z-index: 20;
+    }
+
+    /* ============================================================
+       PANTALLA PEDIDOS — tarjetas estilo Mis Compras en carrusel
+    ============================================================ */
+
+    /* Contenedor exterior: fondo oscuro tipo LED, ancho total */
+    #lpWrap {
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      position: relative;
+      background: #111827;
+      overflow: hidden;
+      height: 520px;
+    }
+
+    /* Track deslizante — NO display:flex en el wrapper, solo en el track */
+    #lpTrack {
+      display: flex;
+      height: 100%;
+      transition: transform .6s cubic-bezier(.4,0,.2,1);
+      will-change: transform;
+    }
+
+    /* Cada slide = ancho exacto del wrapper, centrado verticalmente */
+    .lp-slide {
+      flex: 0 0 auto;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 0;
+      position: relative;
+    }
+
+    /* ——— LA TARJETA BLANCA ——— */
+    .lp-card {
+      background: #fff;
+      border-radius: 0;
+      border: none;
+      padding: 32px 48px 28px;
+      box-shadow: none;
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* ——— NÚMERO CORRELATIVO DE ORDEN ——— */
+    .lp-card-num-orden {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      color: #111827;
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 4px 14px;
+      line-height: 1.2;
+      letter-spacing: -1px;
+      flex-shrink: 0;
+      border: 2px solid rgba(17,24,39,.10);
+    }
+
+    /* Barra de color superior según estado */
+    .lp-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      border-radius: 22px 22px 0 0;
+    }
+    .lp-card.efectivo::before  { background: linear-gradient(90deg,#22c55e,#16a34a); }
+    .lp-card.pendiente::before { background: linear-gradient(90deg,#f59e0b,#d97706); }
+    .lp-card.pagado::before    { background: linear-gradient(90deg,#3b82f6,#1d4ed8); }
+
+    /* ——— HEADER: código + fecha + badge ——— */
+    .lp-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .lp-card-codigo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+      color: #11112b;
+      letter-spacing: 1px;
+    }
+    .lp-card-fecha {
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 700;
+      margin-top: 3px;
+    }
+    .lp-card-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 18px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .lp-card-badge.efectivo  { background: rgba(34,197,94,.12);  color: #15803d; }
+    .lp-card-badge.pendiente { background: rgba(245,158,11,.12); color: #b45309; }
+    .lp-card-badge.pagado    { background: rgba(59,130,246,.12); color: #1d4ed8; }
+    .lp-card-badge .lp-bdot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: lpPulse 1.2s infinite alternate;
+      flex-shrink: 0;
+    }
+    @keyframes lpPulse { 0%{opacity:1;transform:scale(1)} 100%{opacity:.4;transform:scale(.85)} }
+
+    /* ——— NOMBRE DEL CLIENTE ——— */
+    .lp-card-nombre {
+      font-size: 26px;
+      font-weight: 900;
+      color: #11112b;
+      margin-bottom: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ——— LISTA DE PRODUCTOS ——— */
+    .lp-card-productos {
+      font-size: 20px;
+      color: #0f172a;
+      line-height: 1.7;
+      margin-bottom: 12px;
+      flex: 1;
+    }
+    .lp-card-prod-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .lp-card-prod-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #9ca3af;
+      flex-shrink: 0;
+    }
+
+    /* ——— FOOTER: total + pago + entrega + botón ——— */
+    .lp-card-footer {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 10px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0,0,0,.07);
+    }
+    .lp-card-footer-left { display: flex; flex-direction: column; gap: 4px; }
+    .lp-card-botones {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+      width: 100%;
+    }
+    .lp-card-botones .lp-btn-confirmar,
+    .lp-card-botones .lp-btn-anular,
+    .lp-card-botones .lp-btn-camino {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* ——— BOTÓN TU PEDIDO VA EN CAMINO ——— */
+    .lp-btn-camino {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      background: #059669;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 22px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(5,150,105,.25);
+      transition: transform .1s, opacity .1s, background .15s;
+    }
+    .lp-btn-camino:hover    { background: #047857; }
+    .lp-btn-camino:active   { transform: scale(.96); opacity: .85; }
+    .lp-btn-camino:disabled { opacity: .45; cursor: not-allowed; }
+    .lp-card-total {
+      font-size: 38px;
+      font-weight: 900;
+      color: #0f172a;
+    }
+    .lp-card-info {
+      font-size: 17px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    /* ——— BOTÓN CONFIRMAR (solo efectivo pendiente) ——— */
+    .lp-btn-confirmar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      background: #11112b;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 22px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 4px 18px rgba(17,17,43,.25);
+      transition: transform .1s, opacity .1s;
+    }
+    .lp-btn-confirmar:active   { transform: scale(.96); opacity: .85; }
+    .lp-btn-confirmar:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ——— BOTÓN ANULAR (solo pendientes) ——— */
+    .lp-btn-anular {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      background: #fff;
+      color: #dc2626;
+      border: 2px solid #dc2626;
+      border-radius: 14px;
+      padding: 14px 22px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 4px 18px rgba(220,38,38,.15);
+      transition: transform .1s, opacity .1s, background .15s, color .15s;
+    }
+    .lp-btn-anular:hover    { background: #dc2626; color: #fff; }
+    .lp-btn-anular:active   { transform: scale(.96); opacity: .85; }
+    .lp-btn-anular:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ——— FLECHAS ——— */
+    .lp-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 30;
+      border: none;
+      background: transparent;
+      color: #ffffff;
+      mix-blend-mode: difference;
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1;
+      padding: 12px 10px;
+      cursor: pointer;
+      user-select: none;
+      opacity: 0.85;
+      pointer-events: auto;
+    }
+    .lp-arrow:active { transform: translateY(-50%) scale(.96); }
+    .lp-arrow.left  { left: 10px; }
+    .lp-arrow.right { right: 10px; }
+    @media (max-width: 720px), (hover: none) and (pointer: coarse) {
+      .lp-arrow { font-size: 44px !important; }
+    }
+
+    /* ——— DOTS ——— */
+    .lp-dots {
+      position: absolute;
+      bottom: 14px;
+      left: 0; right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      pointer-events: none;
+      z-index: 25;
+    }
+    .lp-dot-ind {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.3);
+      transition: background .25s, transform .25s;
+    }
+    .lp-dot-ind.active { background: #fff; transform: scale(1.35); }
+
+    /* ——— CONTADOR ——— */
+    .lp-counter {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      color: rgba(255,255,255,.45);
+      letter-spacing: 1.5px;
+      z-index: 25;
+      white-space: nowrap;
+    }
+
+    /* ——— ESTADO VACÍO / CARGANDO ——— */
+    .lp-estado {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .lp-estado-icon { font-size: 40px; opacity: .4; }
+    .lp-estado-text {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      color: rgba(255,255,255,.4);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 720px), (hover: none) and (pointer: coarse) {
+      #lpWrap                          { height: auto !important; min-height: 0 !important; max-height: none !important; }
+      .lp-slide                        { padding: 0 !important; height: auto !important; min-height: 0 !important; }
+      .lp-card                         { border-radius: 0 !important; padding: 28px 28px 24px !important; height: auto !important; overflow: visible !important; justify-content: flex-start !important; }
+      .lp-card-header                  { margin-bottom: 20px !important; gap: 14px !important; }
+      .lp-card-num-orden               { font-size: 42px !important; padding: 6px 18px !important; border-radius: 12px !important; }
+      .lp-card-codigo                  { font-size: 30px !important; letter-spacing: 1px !important; }
+      .lp-card-fecha                   { font-size: 26px !important; margin-top: 6px !important; }
+      .lp-card-badge                   { font-size: 24px !important; padding: 10px 22px !important; }
+      .lp-card-badge .lp-bdot          { width: 13px !important; height: 13px !important; }
+      .lp-card-nombre                  { font-size: 34px !important; margin-bottom: 20px !important; white-space: normal !important; overflow: visible !important; text-overflow: unset !important; }
+      .lp-card-productos               { font-size: 28px !important; line-height: 1.75 !important; flex: none !important; margin-bottom: 14px !important; }
+      .lp-card-prod-item               { gap: 12px !important; }
+      .lp-card-prod-dot                { width: 11px !important; height: 11px !important; }
+      .lp-card-footer                  { padding-top: 18px !important; margin-top: 16px !important; gap: 14px !important; flex-shrink: 0 !important; flex-wrap: wrap !important; }
+      .lp-card-total                   { font-size: 48px !important; }
+      .lp-card-info                    { font-size: 25px !important; line-height: 1.65 !important; }
+      .lp-card-botones                 { gap: 16px !important; margin-top: 18px !important; }
+      .lp-btn-confirmar                { padding: 22px 32px !important; font-size: 28px !important; border-radius: 18px !important; gap: 12px !important; }
+      .lp-btn-anular                   { padding: 22px 32px !important; font-size: 28px !important; border-radius: 18px !important; gap: 12px !important; }
+      .lp-btn-camino                   { padding: 22px 32px !important; font-size: 28px !important; border-radius: 18px !important; gap: 12px !important; }
+    }
+
+
+    /* ===== Área del panel de control ===== */
+    .panel-section {
+      width: min(980px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 24px 0;
+    }
+
+    .panel-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      color: #192130;
+      text-align: center;
+      padding: 18px 14px;
+      background: #dfdff0;
+      border-radius: 16px;
+      margin: 0 0 24px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 720px) {
+      .panel-title { font-size: 34px !important; padding: 22px 14px !important; }
+    }
+
+    /* ============================================================
+       MENÚ PLEGABLE — HOJAS DEL SPREADSHEET
+       (mismo estilo que catalog-menu de index)
+    ============================================================ */
+    #psWrap {
+      width: min(980px, calc(100% - 24px));
+      margin: 0 auto 32px;
+      position: relative;
+      user-select: none;
+    }
+
+    /* Botón principal — idéntico a .catalog-menu-btn */
+    #psToggle {
+      width: 100%;
+      background: linear-gradient(135deg, #11112b 0%, #1e1e4a 100%);
+      color: #fff;
+      text-align: center;
+      text-transform: uppercase;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 18px 20px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 18px rgba(17,17,43,.35);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: box-shadow .15s, transform .1s;
+    }
+    #psToggle:active {
+      transform: scale(.985);
+      box-shadow: 0 2px 8px rgba(17,17,43,.3);
+    }
+    #psToggle.open {
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 2px 0 rgba(0,0,0,.1);
+    }
+
+    /* Ícono + label izquierda */
+    #psToggle .ps-icon {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+      flex: 1;
+      justify-content: center;
+    }
+    #psToggle .ps-icon svg {
+      width: 28px; height: 28px;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    /* Flecha derecha — idéntica a .catalog-menu-arrow */
+    #psToggle .ps-arrow {
+      font-size: 22px;
+      transition: transform .25s cubic-bezier(.4,0,.2,1);
+      display: inline-block;
+      pointer-events: none;
+      opacity: .85;
+      flex-shrink: 0;
+    }
+    #psToggle.open .ps-arrow { transform: rotate(180deg); }
+
+    /* Dropdown — idéntico a .catalog-dropdown */
+    #psPanel {
+      display: none;
+      position: relative;
+      left: 0; right: 0;
+      background: #fff;
+      border: 2px solid #11112b;
+      border-top: none;
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 14px 40px rgba(17,17,43,.22);
+      overflow: hidden;
+    }
+    #psPanel.open {
+      display: block;
+      animation: psDropIn .2s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes psDropIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Items — idénticos a .catalog-dropdown-item */
+    .ps-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      padding: 18px 22px;
+      font-size: 20px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid rgba(17,17,43,.08);
+      color: #11112b;
+      background: #fff;
+      text-align: left;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      min-height: 62px;
+      line-height: 1.2;
+      transition: background .1s, color .1s;
+    }
+    .ps-item { cursor: pointer; }
+    .ps-item:last-child { border-bottom: none; }
+    .ps-item:active     { background: #f0f0ff; }
+
+    /* Punto de color — idéntico al ::before de catalog-dropdown-item */
+    .ps-item::before {
+      content: "";
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: .45;
+      flex-shrink: 0;
+    }
+
+    .ps-item-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 900;
+      color: #9ca3af;
+      min-width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .ps-item-name { flex: 1; }
+
+    /* Cargando */
+    .ps-loading {
+      padding: 20px 24px;
+      font-size: 16px;
+      color: #888;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* MÓVIL — idéntico al bloque móvil de catalog en index */
+    @media (max-width: 720px), (hover: none) and (pointer: coarse) {
+      #psToggle {
+        font-size: 32px !important;
+        padding: 22px 20px !important;
+        border-radius: 18px !important;
+        letter-spacing: 2px !important;
+      }
+      #psToggle.open { border-radius: 18px 18px 0 0 !important; }
+      #psToggle .ps-icon svg { width: 34px !important; height: 34px !important; }
+      #psToggle .ps-arrow    { font-size: 28px !important; }
+      #psPanel {
+        border-radius: 0 0 18px 18px !important;
+        border-width: 2.5px !important;
+      }
+      .ps-item {
+        font-size: 30px !important;
+        padding: 26px 28px !important;
+        min-height: 88px !important;
+        gap: 18px !important;
+        letter-spacing: 1.5px !important;
+      }
+      .ps-item::before { width: 11px !important; height: 11px !important; }
+      .ps-item-num     { font-size: 20px !important; min-width: 36px !important; }
+    }
+
+
+    /* ============================================================
+       MENÚ GESTIÓN DE CATEGORÍAS (AGREGAR / ELIMINAR)
+    ============================================================ */
+    #catGestionWrap {
+      width: min(980px, calc(100% - 24px));
+      margin: 0 auto 24px;
+      position: relative;
+      user-select: none;
+    }
+
+    /* Botón principal del menú — mismo diseño que psToggle */
+    #catGestionToggle {
+      width: 100%;
+      background: linear-gradient(135deg, #11112b 0%, #1e1e4a 100%);
+      color: #fff;
+      text-align: center;
+      text-transform: uppercase;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 18px 20px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 18px rgba(17,17,43,.35);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: box-shadow .15s, transform .1s;
+    }
+    #catGestionToggle:active { transform: scale(.985); box-shadow: 0 2px 8px rgba(17,17,43,.3); }
+    #catGestionToggle.open   { border-radius: 16px 16px 0 0; box-shadow: 0 2px 0 rgba(0,0,0,.1); }
+    #catGestionToggle .cg-icon {
+      display: flex; align-items: center; gap: 10px;
+      pointer-events: none; flex: 1; justify-content: center;
+    }
+    #catGestionToggle .cg-arrow {
+      font-size: 22px;
+      transition: transform .25s cubic-bezier(.4,0,.2,1);
+      display: inline-block; pointer-events: none; opacity: .85; flex-shrink: 0;
+    }
+    #catGestionToggle.open .cg-arrow { transform: rotate(180deg); }
+
+    /* Panel desplegable */
+    #catGestionPanel {
+      display: none;
+      background: #fff;
+      border: 2px solid #11112b;
+      border-top: none;
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 14px 40px rgba(17,17,43,.22);
+      overflow: hidden;
+    }
+    #catGestionPanel.open {
+      display: block;
+      animation: cgDropIn .2s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes cgDropIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Opciones del menú (AGREGAR / ELIMINAR) */
+    .cg-opcion {
+      display: flex; align-items: center; gap: 14px;
+      width: 100%; padding: 20px 24px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 1px;
+      border: none; border-bottom: 1px solid rgba(17,17,43,.08);
+      color: #11112b; background: #fff;
+      cursor: pointer; text-align: left; box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+      min-height: 64px; line-height: 1.2;
+      transition: background .1s, color .1s;
+    }
+    .cg-opcion:last-child { border-bottom: none; }
+    .cg-opcion:active     { background: #f0f0ff; }
+    .cg-opcion.activa     { background: #e8e8f8; color: #11112b; }
+
+    /* Área de acción (aparece debajo del panel al elegir opción) */
+    #catGestionAccion {
+      display: none;
+      background: #f6f7fb;
+      border: 2px solid #11112b;
+      border-top: none;
+      border-radius: 0 0 16px 16px;
+      padding: 22px 20px 24px;
+    }
+    #catGestionAccion.visible { display: block; }
+
+    /* Input nombre nueva categoría */
+    #catNombreInput {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px 16px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px; font-weight: 700;
+      border: 2px solid rgba(17,17,43,.25);
+      border-radius: 12px;
+      background: #fff; color: #11112b;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      -webkit-user-select: text; user-select: text; touch-action: auto;
+    }
+    #catNombreInput:focus { outline: none; border-color: #11112b; }
+
+    /* Hint texto */
+    .cg-hint {
+      font-size: 13px; color: #6b7280; font-weight: 600;
+      margin-bottom: 16px; letter-spacing: .3px; line-height: 1.5;
+    }
+
+    /* Selector de categoría a eliminar */
+    #catEliminarSelect {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px 16px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px; font-weight: 700;
+      border: 2px solid rgba(17,17,43,.25);
+      border-radius: 12px;
+      background: #fff; color: #11112b;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    #catEliminarSelect:focus { outline: none; border-color: #11112b; }
+
+    /* Botón de acción (AGREGAR / ELIMINAR) */
+    .cg-btn-accion {
+      width: 100%;
+      padding: 16px 20px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 22px; font-weight: 900;
+      letter-spacing: 2px; text-transform: uppercase;
+      border: none; border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(0,0,0,.18);
+      transition: transform .1s, box-shadow .1s, opacity .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cg-btn-accion:active  { transform: scale(.985); }
+    .cg-btn-accion:disabled { opacity: .45; cursor: not-allowed; }
+    .cg-btn-agregar  { background: linear-gradient(135deg,#16a34a,#15803d); color: #fff; }
+    .cg-btn-eliminar { background: linear-gradient(135deg,#dc2626,#b91c1c); color: #fff; }
+
+    /* Mensaje resultado */
+    #catGestionMsg {
+      margin-top: 14px; padding: 12px 16px;
+      border-radius: 12px; font-size: 15px; font-weight: 700;
+      display: none; line-height: 1.4;
+    }
+    #catGestionMsg.ok  { background: rgba(22,163,74,.12);  color: #15803d; }
+    #catGestionMsg.err { background: rgba(220,38,38,.10);  color: #b91c1c; }
+
+    /* MÓVIL */
+    @media (max-width: 720px), (hover: none) and (pointer: coarse) {
+      #catGestionToggle {
+        font-size: 32px !important; padding: 22px 20px !important;
+        border-radius: 18px !important; letter-spacing: 2px !important;
+      }
+      #catGestionToggle.open { border-radius: 18px 18px 0 0 !important; }
+      #catGestionToggle .cg-arrow { font-size: 28px !important; }
+      #catGestionPanel  { border-radius: 0 0 18px 18px !important; border-width: 2.5px !important; }
+      #catGestionAccion { border-radius: 0 0 18px 18px !important; border-width: 2.5px !important; padding: 28px 22px 30px !important; }
+      .cg-opcion { font-size: 30px !important; padding: 26px 28px !important; min-height: 88px !important; gap: 18px !important; }
+      #catNombreInput   { font-size: 28px !important; padding: 18px 20px !important; border-radius: 14px !important; }
+      #catEliminarSelect { font-size: 26px !important; padding: 18px 20px !important; border-radius: 14px !important; }
+      .cg-btn-accion    { font-size: 30px !important; padding: 22px 20px !important; border-radius: 16px !important; }
+      #catGestionMsg    { font-size: 22px !important; padding: 16px 20px !important; border-radius: 14px !important; }
+      .cg-hint          { font-size: 20px !important; }
+    }
+
+    /* ============================================================
+       BOTÓN DESPLEGAR / ESCONDER FLAYER
+    ============================================================ */
+    #desplegarFlayerWrap {
+      width: min(980px, calc(100% - 24px));
+      margin: 0 auto 24px;
+    }
+    #btnDesplegarFlayer {
+      width: 100%;
+      background: linear-gradient(135deg, #11112b 0%, #1e1e4a 100%);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 18px 20px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(17,17,43,.35);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      transition: box-shadow .15s, transform .1s;
+    }
+    #btnDesplegarFlayer:hover  { box-shadow: 0 6px 24px rgba(17,17,43,.45); }
+    #btnDesplegarFlayer:active { transform: scale(.985); box-shadow: 0 2px 8px rgba(17,17,43,.3); }
+
+    @media (max-width: 720px), (hover: none) and (pointer: coarse) {
+      #btnDesplegarFlayer {
+        font-size: 32px !important;
+        padding: 22px 20px !important;
+        border-radius: 18px !important;
+        letter-spacing: 2px !important;
+      }
+    }
+
+    /* ============================================================
+       BLOQUE ENVIAR FLYER
+    ============================================================ */
+    #flayerWrap {
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+    }
+    .flayer-card {
+      background: linear-gradient(160deg, #11112b 0%, #1e1e4a 100%);
+      border-radius: 20px;
+      padding: 28px 24px 32px;
+      box-shadow: 0 6px 32px rgba(17,17,43,.35);
+    }
+    .flayer-card-title {
+      font-family: "Orbitron", sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+      text-align: center;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin: 0 0 6px;
+    }
+    .flayer-card-sub {
+      font-size: 15px;
+      color: rgba(255,255,255,.6);
+      text-align: center;
+      margin: 0 0 22px;
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
+    #flayerImgWrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin: 0 0 22px;
+    }
+    #flayerImg {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.45);
+      display: none;
+      object-fit: contain;
+    }
+    #flayerImgPlaceholder {
+      width: 100%;
+      max-width: 420px;
+      height: 180px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.07);
+      border: 2px dashed rgba(255,255,255,.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,.4);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .flayer-label {
+      font-family: "Orbitron", sans-serif;
+      font-size: 16px;
+      font-weight: 900;
+      color: rgba(255,255,255,.85);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: block;
+      margin: 0 0 10px;
+    }
+    #flayerEmails {
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(255,255,255,.09);
+      border: 2px solid rgba(255,255,255,.22);
+      border-radius: 14px;
+      color: #fff;
+      font-family: "Roboto", sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 16px 18px;
+      resize: vertical;
+      min-height: 100px;
+      outline: none;
+      transition: border-color .18s;
+      -webkit-appearance: none;
+    }
+    #flayerEmails::placeholder { color: rgba(255,255,255,.32); font-weight: 400; }
+    #flayerEmails:focus { border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.13); }
+    .flayer-hint {
+      font-size: 13px;
+      color: rgba(255,255,255,.42);
+      margin: 8px 0 22px;
+      font-weight: 500;
+    }
+    #flayerBtnEnviar {
+      width: 100%;
+      background: #fff;
+      color: #11112b;
+      font-family: "Orbitron", sans-serif;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 14px;
+      padding: 20px 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(0,0,0,.25);
+      transition: transform .12s, box-shadow .12s;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    #flayerBtnEnviar:active { transform: scale(.97); box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+    #flayerBtnEnviar:disabled { opacity: .55; cursor: not-allowed; }
+    #flayerMsg {
+      margin: 16px 0 0;
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: none;
+    }
+    #flayerMsg.ok  { background: rgba(34,197,94,.18);  color: #4ade80; border: 1.5px solid rgba(74,222,128,.3); }
+    #flayerMsg.err { background: rgba(239,68,68,.18);   color: #f87171; border: 1.5px solid rgba(248,113,113,.3); }
+    @media (max-width: 720px) {
+      .flayer-card        { padding: 26px 18px 30px; border-radius: 18px; }
+      .flayer-card-title  { font-size: 30px !important; }
+      .flayer-card-sub    { font-size: 20px !important; }
+      .flayer-label       { font-size: 24px !important; }
+      #flayerEmails       { font-size: 28px !important; padding: 22px !important; min-height: 160px !important; border-radius: 16px !important; line-height: 1.5 !important; }
+      .flayer-hint        { font-size: 20px !important; }
+      #flayerBtnEnviar    { font-size: 30px !important; padding: 26px !important; border-radius: 16px !important; }
+      #flayerMsg          { font-size: 22px !important; padding: 18px !important; border-radius: 14px !important; }
+    }
+
+  </style>
+<style>
+/* ============================================================
+   PANTALLA GAMEBOY — Editor de hojas estilo index.html
+   ============================================================ */
+
+/* Overlay oscuro */
+#gbOverlay {
+  display: flex;
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 99000;
+  background: rgba(0,0,0,.82);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  box-sizing: border-box;
+  transition: opacity .2s ease;
+}
+#gbOverlay.open {
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* Panel principal */
+#gbPanel {
+  display: flex;
+  flex-direction: column;
+  width: min(1140px, 99vw);
+  height: min(900px, 96vh);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 16px 64px rgba(0,0,0,.85);
+  border: 3px solid #11112b;
+  background: #11112b;
+}
+
+/* Barra superior — estilo paneldecontrol (azul oscuro + Orbitron) */
+#gbTopBar {
+  flex-shrink: 0;
+  height: 64px;
+  background: linear-gradient(135deg, #11112b 0%, #1e1e4a 100%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  box-shadow: 0 3px 16px rgba(0,0,0,.4);
+}
+#gbBtnClose {
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  width: 46px; height: 46px;
+  font-size: 26px;
+  font-weight: 900;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+#gbBtnClose:hover { background: rgba(255,255,255,.32); }
+#gbTitleIcon { font-size: 24px; flex-shrink: 0; }
+#gbTitle {
+  flex: 1;
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(12px, 2.2vw, 18px);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#gbMsg {
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-right: 8px;
+  color: #fff;
+  transition: color .2s;
+}
+#gbMsg.ok  { color: #86efac; }
+#gbMsg.err { color: #fca5a5; }
+
+/* Botón GUARDAR CAMBIOS — verde prominente, estilo index */
+#gbBtnSave {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 26px;
+  font-size: clamp(14px, 1.8vw, 17px);
+  font-weight: 900;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(22,163,74,.5);
+  white-space: nowrap;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: .5px;
+  transition: background .15s, transform .1s;
+}
+#gbBtnSave:hover    { background: #15803d; }
+#gbBtnSave:active   { transform: scale(.96); }
+#gbBtnSave:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Pantalla Gameboy — área central con el look de index.html */
+#gbScreen {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #d5f5e6;
+  border-left: 8px solid #112b38;
+  border-right: 8px solid #112b38;
+  box-shadow:
+    inset 0 0 18px #3ef0a0,
+    inset 0 0 6px #3ef0a0;
+  position: relative;
+  min-height: 200px;
+  height: 0; /* ← fuerza que flex:1 funcione correctamente dentro de un flex column */
+}
+
+/* Tabla dentro de la pantalla Gameboy */
+#gbTable {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-family: 'Roboto', sans-serif;
+}
+#gbTable thead th {
+  background: #112b38;
+  color: #3ef0a0;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-align: center;
+  padding: 10px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  white-space: nowrap;
+  border-right: 1px solid rgba(62,240,160,.2);
+  user-select: none;
+  min-width: 160px;
+}
+#gbTable thead th.gb-rn {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  min-width: 46px;
+  width: 46px;
+}
+#gbTable tbody td {
+  padding: 0;
+  border: 1px solid rgba(17,43,56,.25);
+  vertical-align: middle;
+  background: #d5f5e6;
+}
+#gbTable tbody td.gb-rn {
+  background: #b2ecd8 !important;
+  color: #112b38;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  min-width: 46px;
+  width: 46px;
+  border-right: 2px solid #3ef0a0;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  user-select: none;
+  padding: 0 4px;
+}
+#gbTable tbody tr:nth-child(even) td:not(.gb-rn) { background: #c1f0da; }
+#gbTable tbody tr:hover           td:not(.gb-rn) { background: #a8e8cc; }
+
+#gbTable tbody td input {
+  display: block;
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 11px 13px;
+  font-size: 15px;
+  font-family: 'Roboto', sans-serif;
+  color: #0f172a;
+  background: transparent;
+  min-height: 46px;
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: auto;
+}
+#gbTable tbody td input:focus {
+  background: #fefec8;
+  box-shadow: inset 0 0 0 2.5px #3ef0a0;
+}
+
+/* Barra inferior */
+#gbBottomBar {
+  flex-shrink: 0;
+  height: 56px;
+  background: #112b38;
+  border-top: 2px solid #3ef0a0;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 14px;
+}
+#gbBtnAdd {
+  background: transparent;
+  border: 2px dashed #3ef0a0;
+  border-radius: 10px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #3ef0a0;
+  cursor: pointer;
+  font-family: 'Roboto', sans-serif;
+  transition: background .1s, color .1s;
+}
+#gbBtnAdd:hover { background: #3ef0a0; color: #112b38; }
+#gbRowCount {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3ef0a0;
+  margin-left: auto;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  opacity: .7;
+}
+
+/* Spinner */
+#gbSpinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #112b38;
+  flex-direction: column;
+  gap: 14px;
+}
+.gb-spin-ring {
+  width: 44px; height: 44px;
+  border: 5px solid rgba(17,43,56,.15);
+  border-top-color: #3ef0a0;
+  border-radius: 50%;
+  animation: gbSpin .8s linear infinite;
+}
+@keyframes gbSpin { to { transform: rotate(360deg); } }
+
+/* MÓVIL */
+@media (max-width: 720px), (hover: none) and (pointer: coarse) {
+  #gbTitle    { font-size: 20px !important; letter-spacing: 1px !important; }
+  #gbBtnSave  { font-size: 22px !important; padding: 14px 18px !important; border-radius: 14px !important; }
+  #gbBtnClose { width: 56px !important; height: 56px !important; font-size: 32px !important; border-radius: 14px !important; }
+  #gbTitleIcon { font-size: 30px !important; }
+  #gbMsg      { font-size: 20px !important; }
+  #gbTopBar   { height: 76px !important; padding: 0 14px !important; gap: 10px !important; }
+  #gbTable thead th {
+    font-size: 20px !important;
+    padding: 14px 16px !important;
+    letter-spacing: 1px !important;
+    min-width: 200px !important;
+  }
+  #gbTable thead th.gb-rn { min-width: 56px !important; width: 56px !important; }
+  #gbTable tbody td.gb-rn { font-size: 18px !important; min-width: 56px !important; width: 56px !important; }
+  #gbTable tbody td input {
+    font-size: 26px !important;
+    min-height: 72px !important;
+    padding: 16px 18px !important;
+  }
+  #gbBtnAdd   { font-size: 22px !important; padding: 14px 28px !important; border-radius: 12px !important; }
+  #gbRowCount { font-size: 20px !important; }
+  #gbBottomBar { height: 70px !important; padding: 0 18px !important; }
+  #gbSpinner  { font-size: 22px !important; }
+  .gb-spin-ring { width: 56px !important; height: 56px !important; border-width: 6px !important; }
+}
+</style>
+  <!-- ====== COLOR DINÁMICO (DISEÑO APLICACIÓN) ====== -->
+  <style id="colorBaseStyle">
+    :root { --color-base: #11112b; --color-base-alt: #1e1e4a; --color-base-card: #dfdff0; }
+  </style>
+  <script>
+  (function(){
+    var PAGE = "paneldecontrol";
+    var COLOR_FABRICA = "#11112b";
+    var KEY = "APP_COLOR_BASE_V1_" + PAGE;
+    function applyColor(color){
+      if(!color) return;
+      var style = document.getElementById("colorBaseStyle");
+      if(!style) return;
+      var hex = color.replace("#","");
+      if(hex.length!==6) return;
+      var r=parseInt(hex.slice(0,2),16), g=parseInt(hex.slice(2,4),16), b=parseInt(hex.slice(4,6),16);
+      var ra=Math.round(r*0.75), ga=Math.round(g*0.75), ba=Math.round(b*0.75);
+      var toH=function(n){return("0"+n.toString(16)).slice(-2);};
+      var alt="#"+toH(ra)+toH(ga)+toH(ba);
+      var rc=Math.round(r*0.18+255*0.82), gc=Math.round(g*0.18+255*0.82), bc=Math.round(b*0.18+255*0.82);
+      var card="#"+toH(rc)+toH(gc)+toH(bc);
+      style.textContent=":root{--color-base:"+color+";--color-base-alt:"+alt+";--color-base-card:"+card+";}";
+    }
+    try{
+      var cached=JSON.parse(localStorage.getItem(KEY)||"null");
+      if(cached && cached.color) applyColor(cached.color);
+    }catch(e){}
+    window.addEventListener("load",function(){
+      if(typeof google==="undefined"||!google.script||!google.script.run) return;
+      google.script.run
+        .withSuccessHandler(function(res){
+          var norm=function(s){return s.replace(/\s+/g,"").toLowerCase();};
+          var pageNorm=norm(PAGE);
+          var colorFinal="";
+          if(res&&res.ok&&res.reglas&&res.reglas.length){
+            for(var i=0;i<res.reglas.length;i++){
+              var r=res.reglas[i];
+              var pNorm=norm(String(r.paginas||"").trim());
+              var aplica=pNorm==="todas"||(pageNorm&&pNorm.split(",").map(function(p){return norm(p);}).indexOf(pageNorm)>=0);
+              if(aplica){ colorFinal=r.color; break; }
+            }
+          }
+          if(colorFinal){
+            // Hay color asignado para esta página → guardar y aplicar
+            try{localStorage.setItem(KEY,JSON.stringify({color:colorFinal,sig:res.signature,ts:Date.now()}));}catch(e){}
+            applyColor(colorFinal);
+          } else {
+            // No hay regla para esta página → restaurar color de fábrica y limpiar cache
+            try{localStorage.removeItem(KEY);}catch(e){}
+            applyColor(COLOR_FABRICA);
+          }
+        })
+        .withFailureHandler(function(){})
+        .getColorDiseño();
+    });
+  })();
+  </script>
+  <!-- ====== FIN COLOR DINÁMICO ====== -->
+  <!-- ====== OVERRIDE COLOR BASE ====== -->
+  <style>
+    /* Aplica el color dinámico a los elementos principales */
+    .primary, .cuenta-btn, .add-btn, #prodModalAddBtn,
+    .btn-guardar-dir, .btn-guardar-banco, .btn-guardar-form,
+    .btn.primary, .btn.success, #btnConfirmar, #rcBtnEnviar,
+    #rcBtnVerif, #rcBtnGuardar, .cg-btn-agregar,
+    #flayerBtnEnviar, #gbBtnSave, #cgBtnAgregar,
+    .lp-btn-confirmar, .prep-btn,
+    .catalog-menu-btn, #psToggle, #catGestionToggle,
+    .account-cta-btn, #btnDesplegarFlayer,
+    #gbBtnSave {
+      background: var(--color-base) !important;
+      border-color: var(--color-base) !important;
+    }
+    .catalog-menu-btn, #psToggle, #catGestionToggle, #btnDesplegarFlayer {
+      background: linear-gradient(135deg, var(--color-base) 0%, var(--color-base-alt) 100%) !important;
+    }
+    /* Textos con color primario */
+    .nav-item.active, .link { color: var(--color-base) !important; }
+    /* Bordes activos */
+    .option-label.selected, .dir-card.selected, .banco-card.selected,
+    .punto-item.selected { border-color: var(--color-base) !important; }
+    /* Fondos de cards de título */
+    .catalog-title, .cuenta-title, .miscompras-title,
+    .panel-title { background: var(--color-base-card) !important; }
+    /* Botones drawer */
+    .drawer-actions .primary { background: var(--color-base) !important; border-color: var(--color-base) !important; }
+    .drawer-actions button:not(.primary) { background: var(--color-base-card) !important; border-color: var(--color-base-card) !important; }
+    /* Radio dots activos */
+    .radio-dot::after, .dir-radio::after, .banco-radio::after,
+    .punto-dot::after { background: var(--color-base) !important; }
+    .option-label.selected .radio-dot,
+    .dir-card.selected .dir-radio,
+    .banco-card.selected .banco-radio,
+    .punto-item.selected .punto-dot { border-color: var(--color-base) !important; }
+    /* Input focus */
+    .field-input:focus, .field-select:focus, .cuenta-input:focus,
+    .descuento-input:focus { border-color: var(--color-base) !important; }
+    /* Carrusel dot activo */
+    .carrusel-dot.active, .cat-dot.active { background: var(--color-base) !important; }
+    /* Spinner */
+    .spinner { border-top-color: var(--color-base) !important; }
+    .gb-spin-ring { border-top-color: var(--color-base) !important; }
+    /* Scrollbar */
+    #catalogScrollWrap::-webkit-scrollbar-thumb,
+    #comprasScrollWrap::-webkit-scrollbar-thumb { background: var(--color-base) !important; }
+    /* GAS GameBoy */
+    #gbTable thead th, #gbTopBar, #gbBottomBar, #gbPanel {
+      background: var(--color-base) !important;
+    }
+    #gbTable thead th { background: linear-gradient(135deg, var(--color-base) 0%, var(--color-base-alt) 100%) !important; }
+    /* Led dots */
+    .lp-dot-ind.active { background: #fff; }
+    .lp-card-badge.efectivo { background: rgba(34,197,94,.12); color: #15803d; }
+    .lp-card-badge.pendiente { background: rgba(245,158,11,.12); color: #b45309; }
+    .lp-card-badge.pagado { background: rgba(59,130,246,.12); color: #1d4ed8; }
+    /* Confirm btn */
+    .confirm-btn-delete { background: #b91c1c !important; }
+    /* Input focus box-shadow */
+    .field-input:focus, .field-select:focus {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-base) 15%, transparent) !important;
+    }
+  </style>
+  <!-- ====== FIN OVERRIDE COLOR BASE ====== -->
+</head>
+
+<body data-page="paneldecontrol">
+
+  <div class="page">
+
+    <!-- ===== LED PRINCIPAL (con logo + botones hamburguesa/carrito) ===== -->
+    <div class="led-fullbleed">
+      <div id="ledTopWrap">
+
+        <div id="indicadores">
+          <span id="ledContent">HOY SERA UN BUEN DIA</span>
+        </div>
+
+        <div id="ledPinchaAquiWrap">
+          <span id="ledPinchaAquiText">Pincha aquí para más información</span>
+        </div>
+
+        <img id="ledBrandLogo" alt="Logo" />
+
+        <!-- Botones hamburguesa + carrito — MÓVIL (sobre la LED principal) -->
+        <div id="ledQuickActions">
+          <button class="qa-btn" id="qaMenu" type="button" aria-label="Menú">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round">
+              <path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>
+            </svg>
+          </button>
+          <button class="qa-btn" id="qaCart" type="button" aria-label="Carrito">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 6h15l-2 9H7L6 6Z"></path>
+              <path d="M6 6l-2-2H2"></path>
+              <circle cx="9" cy="19" r="1.6"></circle>
+              <circle cx="17" cy="19" r="1.6"></circle>
+            </svg>
+            <span class="qa-badge" id="qaCartBadge" style="display:none;">0</span>
+          </button>
+        </div>
+
+        <!-- Botones hamburguesa + carrito — ESCRITORIO (bajo la LED principal) -->
+        <div id="ledQuickActionsDesktop">
+          <button class="qa-btn" id="qaMenuDesk" type="button" aria-label="Menú">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round">
+              <path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>
+            </svg>
+          </button>
+          <button class="qa-btn" id="qaCartDesk" type="button" aria-label="Carrito">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 6h15l-2 9H7L6 6Z"></path>
+              <path d="M6 6l-2-2H2"></path>
+              <circle cx="9" cy="19" r="1.6"></circle>
+              <circle cx="17" cy="19" r="1.6"></circle>
+            </svg>
+            <span class="qa-badge" id="qaCartBadgeDesk" style="display:none;">0</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+    <!-- Fin LED principal -->
+
+    <!-- ===== PANTALLA PREPARAR — LED independiente 200px ===== -->
+    <div id="prepWrap">
+      <div id="prepTrack">
+        <div class="prep-estado" id="prepEstado">
+          <div class="prep-estado-icon">⏳</div>
+          <div>CARGANDO...</div>
+        </div>
+      </div>
+      <button class="prep-arrow left"  id="prepPrev" type="button" aria-label="Anterior">◀</button>
+      <button class="prep-arrow right" id="prepNext" type="button" aria-label="Siguiente">▶</button>
+      <div class="prep-dots"    id="prepDots"></div>
+      <div class="prep-counter" id="prepCounter"></div>
+    </div>
+    <!-- Fin pantalla preparar -->
+
+    <!-- ===== PANTALLA PEDIDOS — estilo restaurante, pantalla completa ===== -->
+    <div id="lpWrap">
+      <!-- Track deslizante — los slides se mueven horizontalmente -->
+      <div id="lpTrack">
+        <!-- slides generados por JS -->
+        <div class="lp-estado" id="lpEstado">
+          <div class="lp-estado-icon">🕐</div>
+          <div class="lp-estado-text">Cargando pedidos…</div>
+        </div>
+      </div>
+      <!-- Flechas translúcidas -->
+      <button class="lp-arrow left"  id="lpPrev" type="button" aria-label="Anterior">◀</button>
+      <button class="lp-arrow right" id="lpNext" type="button" aria-label="Siguiente">▶</button>
+      <!-- Dots -->
+      <div class="lp-dots" id="lpDots"></div>
+      <!-- Contador N/Total -->
+      <div class="lp-counter" id="lpCounter"></div>
+    </div>
+    <!-- Fin pantalla pedidos -->
+
+    <!-- ===== BOTÓN DESPLEGAR / ESCONDER FLAYER ===== -->
+    <div id="desplegarFlayerWrap">
+      <button id="btnDesplegarFlayer" type="button">
+        📲 DESPLEGAR FLAYER
+      </button>
+      <!-- BLOQUE ENVIAR FLYER — aparece/desaparece aquí, justo bajo el botón -->
+      <div id="flayerWrap" style="display:none; margin-top:16px;">
+        <div class="flayer-card">
+          <div class="flayer-card-title">📲 Enviar Flyer QR</div>
+          <div class="flayer-card-sub">Comparte tu código QR por correo</div>
+
+          <!-- Vista previa del flyer -->
+          <div id="flayerImgWrap">
+            <div id="flayerImgPlaceholder">Cargando flyer…</div>
+            <img id="flayerImg" src="" alt="Flyer QR" />
+          </div>
+
+          <!-- Campo correos -->
+          <label class="flayer-label" for="flayerEmails">✉️ Destinatarios</label>
+          <textarea id="flayerEmails" placeholder="correo@ejemplo.com, otro@correo.com"></textarea>
+          <div class="flayer-hint">Separa varios correos con coma ( , ) o punto y coma ( ; )</div>
+
+          <!-- Botón enviar -->
+          <button id="flayerBtnEnviar" type="button">
+            <span id="flayerBtnIcon">📤</span>
+            <span id="flayerBtnTxt">ENVIAR FLYER</span>
+          </button>
+
+          <!-- Mensaje resultado -->
+          <div id="flayerMsg"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Fin botón desplegar flayer -->
+
+    <!-- ===== MENÚ GESTIÓN DE CATEGORÍAS ===== -->
+    <div id="catGestionWrap">
+
+      <!-- Botón principal plegable -->
+      <button id="catGestionToggle" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="cg-icon">📂 GESTIÓN DE CATEGORÍAS</span>
+        <span class="cg-arrow">▾</span>
+      </button>
+
+      <!-- Opciones: AGREGAR / ELIMINAR -->
+      <div id="catGestionPanel" role="listbox">
+        <button class="cg-opcion" id="cgOpcionAgregar" type="button">
+          ➕ AGREGAR CATEGORIA PRODUCTOS
+        </button>
+        <button class="cg-opcion" id="cgOpcionEliminar" type="button">
+          🗑️ ELIMINAR CATEGORIA PRODUCTOS
+        </button>
+      </div>
+
+      <!-- Área de acción (se muestra según la opción elegida) -->
+      <div id="catGestionAccion">
+
+        <!-- AGREGAR -->
+        <div id="cgAccionAgregar" style="display:none;">
+          <div class="cg-hint">Escribe el nombre de la nueva categoría. Se creará la hoja con el sello (CATALOGO) automáticamente.</div>
+          <input id="catNombreInput" type="text" placeholder="Ej: LACTEOS" maxlength="60" autocomplete="off" autocorrect="off" spellcheck="false" />
+          <button class="cg-btn-accion cg-btn-agregar" id="cgBtnAgregar" type="button">➕ AGREGAR CATEGORÍA</button>
+        </div>
+
+        <!-- ELIMINAR -->
+        <div id="cgAccionEliminar" style="display:none;">
+          <div class="cg-hint">Selecciona la categoría a eliminar. Esta acción eliminará la hoja del Spreadsheet de forma permanente.</div>
+          <select id="catEliminarSelect">
+            <option value="">— Cargando categorías… —</option>
+          </select>
+          <button class="cg-btn-accion cg-btn-eliminar" id="cgBtnEliminar" type="button">🗑️ ELIMINAR CATEGORÍA</button>
+        </div>
+
+        <!-- Mensaje resultado -->
+        <div id="catGestionMsg"></div>
+      </div>
+
+    </div>
+    <!-- Fin menú gestión categorías -->
+
+
+
+
+
+
+    <!-- ===== MENÚ PLEGABLE — HOJAS DEL SPREADSHEET ===== -->
+    <div id="psWrap" style="display:none;">
+      <button id="psToggle" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="ps-icon">
+          <!-- ícono cuadrícula — igual al de index -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+          <span>HOJAS DEL PROYECTO</span>
+        </span>
+        <span class="ps-arrow">▾</span>
+      </button>
+      <div id="psPanel" role="listbox" aria-labelledby="psToggle">
+        <div class="ps-loading" id="psLoading">Cargando hojas…</div>
+        <div id="psList"></div>
+      </div>
+    </div>
+    <!-- Fin menú plegable -->
+
+  </div><!-- fin .page -->
+
+
+
+
+  <!-- ===== DRAWER MENÚ (idéntico a index.html) ===== -->
+  <div id="drawerOverlay"></div>
+
+  <aside id="appDrawer" aria-label="Menú">
+    <div class="drawer-head">
+      <button class="drawer-close" id="drawerClose" type="button" aria-label="Cerrar">×</button>
+
+      <div class="drawer-welcome">
+        <div class="drawer-avatar">👤</div>
+        <div>
+          <div class="drawer-title">Bienvenido(a)<span id="drawerUserNameWrap" style="display:none;">, <span id="drawerUserName"></span></span></div>
+          <div class="drawer-sub" id="drawerSubText">Ingresa a tu cuenta para ver tus compras, favoritos, etc.</div>
+        </div>
+      </div>
+
+      <!-- Acciones sin sesión -->
+      <div class="drawer-actions" id="drawerGuestActions">
+        <button class="primary" id="drawerLoginBtn" type="button">Ingresa</button>
+        <button id="drawerRegisterBtn" type="button">Crea tu cuenta</button>
+      </div>
+
+      <!-- Acción con sesión -->
+      <div class="drawer-actions" id="drawerAuthActions" style="display:none; grid-template-columns:1fr;">
+        <button class="primary" id="drawerLogoutBtn" type="button">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <h4>Páginas</h4>
+        <div class="drawer-list" id="drawerPages"></div>
+      </div>
+      <div class="drawer-section">
+        <h4>Categorías</h4>
+        <div class="drawer-list" id="drawerCats"></div>
+      </div>
+    </div>
+  </aside>
+
+
+
+  <script>
+
+
+// ============================================================
+// SESIÓN
+// ============================================================
+const SESSION_KEY = "mys_session_v1";
+function sessionGet(){
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch(e){ return null; }
+}
+function sessionClear(){
+  try { localStorage.removeItem(SESSION_KEY); } catch(e){}
+}
+
+// ✅ ANDROID LOGIN: si GAS pasó una sesión via template (login con Google desde app Android),
+// guardarla en localStorage ANTES del ADMIN GUARD para que no redirija al index.
+(function(){
+  try {
+    const androidSession = null;
+    if (androidSession && typeof androidSession === "object" && androidSession.email) {
+      localStorage.setItem("mys_session_v1", JSON.stringify(androidSession));
+    }
+  } catch(e){}
+})();
+
+// ✅ ADMIN GUARD: si la sesión no tiene isAdmin=true, bloquea el acceso y redirige al index
+(function(){
+  try {
+    const s = JSON.parse(localStorage.getItem("mys_session_v1") || "null");
+    if (!s || s.isAdmin !== true) {
+      const EXEC = window.PWA_APP_URL;
+      try { window.top.location.replace(EXEC + "?page=index"); }
+      catch(e){ window.location.replace(EXEC + "?page=index"); }
+    }
+  } catch(e){}
+})();
+
+const WEBAPP_URL = window.PWA_APP_URL;
+const DEFAULT_REGISTRO_URL = WEBAPP_URL + "?page=crearcuenta";
+const DEFAULT_LOGIN_URL    = WEBAPP_URL + "?page=ingrezar";
+
+let _ctaUrls = {
+  register: DEFAULT_REGISTRO_URL,
+  login: DEFAULT_LOGIN_URL
+};
+
+function normalizeUrl(u){
+  u = String(u || "").trim();
+  if (!u) return "";
+  if (/^www\./i.test(u)) return "https://" + u;
+  if (!/^https?:\/\//i.test(u) && /^[a-z0-9.-]+\.[a-z]{2,}([/:].*)?$/i.test(u)) return "https://" + u;
+  return u;
+}
+
+function forceIngresarUrl(u){
+  u = normalizeUrl(u);
+  if (!u) return "";
+  u = u.replace(/([?&])page=login(\b|&|#)/i, "$1page=ingrezar$2");
+  u = u.replace(/([?&])page=login\.html(\b|&|#)/i, "$1page=ingrezar$2");
+  return u;
+}
+
+function redirectToIndex(){
+  const url = WEBAPP_URL + "?page=index&v=" + Date.now();
+  try { window.top.location.href = url; } catch(e){ window.location.href = url; }
+}
+
+function logoutAndGoHome(opts){
+  sessionClear();
+  try { applyAuthUI(opts || {}); } catch(e){}
+  redirectToIndex();
+}
+
+// ============================================================
+// BADGE CARRITO
+// ============================================================
+function cartBadgeSet(n){
+  const num = Math.max(0, Number(n||0)||0);
+  ["qaCartBadge","qaCartBadgeDesk"].forEach((id) => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.textContent = String(num);
+    badge.style.display = num > 0 ? "flex" : "none";
+  });
+}
+
+function refreshCartBadge(){
+  const s = sessionGet();
+  if (!s || !s.email) { cartBadgeSet(0); return; }
+  if (typeof google !== "undefined" && google?.script?.run){
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (res && res.ok) cartBadgeSet(res.totalItems || 0);
+      })
+      .getMiCarroSummary(String(s.email));
+  }
+}
+
+function goToCart(){
+  const s = sessionGet();
+  if (!s || !s.email){
+    const u = forceIngresarUrl(_ctaUrls.login);
+    if (u){ window.top.location.href = u; return; }
+    window.top.location.href = WEBAPP_URL + "?page=ingrezar";
+    return;
+  }
+  window.top.location.href = WEBAPP_URL + "?page=carrodecompras&v=" + Date.now();
+}
+
+// ============================================================
+// UI DE SESIÓN
+// ============================================================
+function applyAuthUI(opts){
+  const s = sessionGet();
+  const logged = !!(s && (s.email || s.phone));
+  const name = (s && (s.nombre || s.email || s.phone)) ? (s.nombre || s.email || s.phone) : "";
+
+  const nameWrap = document.getElementById("drawerUserNameWrap");
+  const nameEl   = document.getElementById("drawerUserName");
+  const subEl    = document.getElementById("drawerSubText");
+  const guestBox = document.getElementById("drawerGuestActions");
+  const authBox  = document.getElementById("drawerAuthActions");
+  const btnLogout= document.getElementById("drawerLogoutBtn");
+
+  if (nameEl) nameEl.textContent = name;
+
+  if (logged){
+    if (nameWrap) nameWrap.style.display = "";
+    if (subEl) subEl.textContent = "Sesión iniciada.";
+    if (guestBox) guestBox.style.display = "none";
+    if (authBox) authBox.style.display = "grid";
+    if (btnLogout) btnLogout.onclick = () => logoutAndGoHome(opts);
+  } else {
+    if (nameWrap) nameWrap.style.display = "none";
+    if (subEl) subEl.textContent = "Ingresa a tu cuenta para ver tus compras, favoritos, etc.";
+    if (guestBox) guestBox.style.display = "grid";
+    if (authBox) authBox.style.display = "none";
+  }
+}
+
+// ============================================================
+// CACHE
+// ============================================================
+const CACHE = {
+  led:     { key: "APP_LED_INDEX_V1",   maxAge: 1000*60*60*24*3 },
+  trans:   { key: "APP_LED_TRANS_V1",   maxAge: 1000*60*60*24*3 },
+  nav:     { key: "APP_NAV_V1",         maxAge: 1000*60*60*24*7 },
+  cats:    { key: "APP_CATS_V1",        maxAge: 1000*60*60*24*7 },
+  psheets: { key: "APP_PANEL_SHEETS_V1",maxAge: 1000*60*5       }  // 5 min
+};
+
+let _ledTransicionMs = 4000;
+let _ledScrollMs     = 8000;
+let _ledImgLoopTimer = null;
+let __ledHeartbeat   = Date.now();
+
+function cacheWrite(key, payload){
+  try { localStorage.setItem(key, JSON.stringify({ ...payload, ts: Date.now() })); } catch(e){}
+}
+function cacheRead(key, maxAge){
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data.ts) return null;
+    if (maxAge && (Date.now() - data.ts > maxAge)) return null;
+    return data;
+  } catch(e){ return null; }
+}
+
+// ============================================================
+// VIDEO KEEP-ALIVE
+// ============================================================
+function prepareAutoplayVideo(video){
+  if (!video) return;
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playsInline = true;
+  try { video.playbackRate = 1; video.defaultPlaybackRate = 1; } catch(e){}
+  video.setAttribute("muted","");
+  video.setAttribute("autoplay","");
+  video.setAttribute("playsinline","");
+  video.setAttribute("webkit-playsinline","");
+  video.setAttribute("preload","auto");
+
+  const tryPlay = () => {
+    if (document.visibilityState !== "visible") return;
+    video.play().catch(()=>{});
+  };
+  video.addEventListener("pause", () => { if (!video.ended) tryPlay(); });
+  video.addEventListener("stalled", tryPlay);
+  video.addEventListener("waiting", tryPlay);
+  video.addEventListener("canplay", tryPlay, { once: true });
+  setTimeout(tryPlay, 120);
+  setTimeout(tryPlay, 700);
+}
+
+// ============================================================
+// LOGO LED
+// ============================================================
+const LED_LOGO_CACHE_KEY = "APP_LED_LOGO_LOGO_INDEX_V1";
+
+function setLedBrandLogo(url, link){
+  const el = document.getElementById("ledBrandLogo");
+  if (!el) return;
+  const clean = normalizeUrl(url);
+  const go    = normalizeUrl(link);
+  if (!clean){
+    el.style.display = "none";
+    el.removeAttribute("src");
+    el.onclick = null;
+    el.style.cursor = "default";
+    return;
+  }
+  el.src = clean;
+  el.style.display = "block";
+  if (go){
+    el.setAttribute("data-link", go);
+    el.style.cursor = "pointer";
+    el.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      window.top.location.href = go;
+    };
+  } else {
+    el.removeAttribute("data-link");
+    el.onclick = null;
+    el.style.cursor = "default";
+  }
+}
+
+function ledLogoCacheRead(){ return cacheRead(LED_LOGO_CACHE_KEY, CACHE.led.maxAge); }
+function ledLogoCacheWrite(payload){ cacheWrite(LED_LOGO_CACHE_KEY, payload); }
+
+function extractLogoFromLedPayload(raw){
+  const s = String(raw || "").trim();
+  if (!s) return { logoUrl: "", logoLink: "", restText: "" };
+  const m = s.match(/^\s*([A-Za-z0-9 _-]{1,30})\(([^)]+)\)\s*(\(([^)]+)\))?\s*(?:,|\n|$)/);
+  if (!m) return { logoUrl: "", logoLink: "", restText: s };
+  const logoUrl  = normalizeUrl(String(m[2] || "").trim());
+  const logoLink = normalizeUrl(String(m[4] || "").trim());
+  const restText = s.slice(m[0].length).trim();
+  return { logoUrl, logoLink, restText };
+}
+
+// ============================================================
+// LED — idéntica a index.html
+// ============================================================
+const LED_CACHE_KEY = CACHE.led.key;
+function ledCacheRead(){ return cacheRead(LED_CACHE_KEY, CACHE.led.maxAge); }
+function ledCacheWrite(payload){ cacheWrite(LED_CACHE_KEY, payload); }
+
+function escapeHTML(str){
+  return String(str || "").replace(/[&<>"']/g, m => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]
+  );
+}
+function isImageUrl(url){ return /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url); }
+
+function _ledApplyScrollDuration(id){
+  const pinchaEl = document.getElementById("ledPinchaAquiText");
+  if (pinchaEl) pinchaEl.style.animationDuration = _ledScrollMs + "ms";
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.animationDuration = _ledScrollMs + "ms";
+}
+
+function _ledStopImgTimer(){
+  if (_ledImgLoopTimer){ try { clearTimeout(_ledImgLoopTimer); } catch(e){} _ledImgLoopTimer = null; }
+}
+
+function _ledParseToken(token){
+  const t = String(token || "").trim();
+  let url = t, link = "";
+  if (t.includes("(") && t.includes(")")){
+    const p1 = t.indexOf("("), p2 = t.lastIndexOf(")");
+    url = t.slice(0, p1).trim();
+    link = t.slice(p1 + 1, p2).trim();
+  }
+  return { url, link: normalizeUrl(link) };
+}
+
+function _ledTokenTipo(url){
+  const u = url.split("?")[0].toLowerCase();
+  if (/\.(mp4|webm|mov)$/.test(u)) return "video";
+  if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/.test(u)) return "imagen";
+  return null;
+}
+
+function reproducirMixtoEnBucle(items, signature){
+  _ledStopImgTimer();
+  const contenedorLED = document.getElementById("indicadores");
+  contenedorLED.classList.add("modo-video");
+  let idx = 0;
+
+  function siguiente(){ idx = (idx + 1) % items.length; mostrar(); }
+
+  function mostrar(){
+    const item = items[idx];
+    const { url, link } = item;
+    ledCacheWrite({
+      tipo: item.tipo, url, link, modoVideo: true, signature,
+      mixto: items, mixtoIdx: idx,
+      transMs: _ledTransicionMs, scrollMs: _ledScrollMs
+    });
+    __ledHeartbeat = Date.now();
+
+    if (item.tipo === "video"){
+      contenedorLED.innerHTML = `
+        <div id="videoLED-container">
+          <video id="videoLED" autoplay muted playsinline webkit-playsinline preload="auto">
+            <source src="${url}">
+          </video>
+        </div>`;
+
+      const pinchaWrap = document.getElementById("ledPinchaAquiWrap");
+      if (pinchaWrap){
+        pinchaWrap.style.display = link ? "block" : "none";
+        pinchaWrap._currentLink = link || "";
+        if (link){ pinchaWrap.onclick = () => window.open(link, "_blank", "noopener,noreferrer"); _ledApplyScrollDuration("scrollTextVideo"); }
+        else pinchaWrap.onclick = null;
+      }
+
+      const video = document.getElementById("videoLED");
+      if (video){
+        video.addEventListener("loadedmetadata", () => { try { video.currentTime = 0; } catch(e){} });
+        prepareAutoplayVideo(video);
+        if (!video._hbBound){ video._hbBound = true; const bump = () => { __ledHeartbeat = Date.now(); }; video.addEventListener("timeupdate", bump); video.addEventListener("playing", bump); bump(); }
+        video.addEventListener("pause", () => video.play().catch(()=>{}));
+        video.onended = () => siguiente();
+        if (link) video.onclick = () => window.open(link, "_blank", "noopener,noreferrer");
+      }
+
+    } else {
+      contenedorLED.innerHTML = `
+        <div id="imgContainerLED">
+          <img id="imgLED" src="${url}" alt="">
+        </div>`;
+
+      const pinchaWrap = document.getElementById("ledPinchaAquiWrap");
+      if (pinchaWrap){
+        pinchaWrap.style.display = link ? "block" : "none";
+        pinchaWrap._currentLink = link || "";
+        if (link){ pinchaWrap.onclick = () => window.open(link, "_blank", "noopener,noreferrer"); _ledApplyScrollDuration("scrollTextImagen"); }
+        else pinchaWrap.onclick = null;
+      }
+
+      if (link){
+        const abrir = () => window.open(link, "_blank", "noopener,noreferrer");
+        const wrap  = document.getElementById("imgContainerLED");
+        const imgEl = document.getElementById("imgLED");
+        if (wrap)  wrap.onclick  = abrir;
+        if (imgEl) imgEl.onclick = abrir;
+      }
+
+      _ledImgLoopTimer = setTimeout(() => siguiente(), _ledTransicionMs);
+    }
+  }
+
+  mostrar();
+}
+
+function renderLEDFromText(texto, signature){
+  const contenedorLED = document.getElementById("indicadores");
+  const msg = String(texto || "").trim();
+  const parts = msg.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+
+  const mediaItems = [];
+  for (const token of parts){
+    const { url, link } = _ledParseToken(token);
+    const tipo = _ledTokenTipo(url);
+    if (tipo) mediaItems.push({ url, link, tipo });
+  }
+
+  if (mediaItems.length > 0){
+    contenedorLED.classList.add("modo-video");
+    reproducirMixtoEnBucle(mediaItems, signature);
+    return;
+  }
+
+  _ledStopImgTimer();
+  contenedorLED.classList.remove("modo-video");
+  const html = msg || "HOY SERA UN BUEN DIA";
+  contenedorLED.innerHTML = `<span id="ledContent">${escapeHTML(html)}</span>`;
+  ledCacheWrite({ tipo: "texto", html, modoVideo: false, signature });
+}
+
+function ledRenderSnapshot(cache){
+  const contenedor = document.getElementById("indicadores");
+  if (!contenedor || !cache) return;
+  contenedor.classList.toggle("modo-video", !!cache.modoVideo);
+  if (cache.mixto && Array.isArray(cache.mixto) && cache.mixto.length > 0){
+    if (typeof cache.transMs === "number" && cache.transMs >= 1000) _ledTransicionMs = cache.transMs;
+    if (typeof cache.scrollMs === "number" && cache.scrollMs >= 1000) _ledScrollMs = cache.scrollMs;
+    reproducirMixtoEnBucle(cache.mixto, cache.signature || "");
+    return;
+  }
+  if (cache.tipo === "video" && cache.url){ reproducirMixtoEnBucle([{ url: cache.url, link: cache.link || "", tipo: "video" }], cache.signature || ""); return; }
+  if (cache.tipo === "imagen" && cache.url){ reproducirMixtoEnBucle([{ url: cache.url, link: cache.link || "", tipo: "imagen" }], cache.signature || ""); return; }
+  contenedor.classList.remove("modo-video");
+  contenedor.innerHTML = `<span id="ledContent">${cache.html || "HOY SERA UN BUEN DIA"}</span>`;
+}
+
+function _loadLedTransicion(){
+  const c = cacheRead(CACHE.trans.key, CACHE.trans.maxAge);
+  if (c && typeof c.ms === "number")       _ledTransicionMs = c.ms;
+  if (c && typeof c.scrollMs === "number") _ledScrollMs     = c.scrollMs;
+  if (typeof google !== "undefined" && google?.script?.run){
+    google.script.run.withSuccessHandler((data) => {
+      if (!data || typeof data.ms !== "number") return;
+      _ledTransicionMs = data.ms;
+      if (typeof data.scrollMs === "number") _ledScrollMs = data.scrollMs;
+      const sigCache = c ? String(c.signature || "") : "";
+      const sigNueva = String(data.signature || "");
+      if (sigNueva !== sigCache) cacheWrite(CACHE.trans.key, { ms: data.ms, scrollMs: data.scrollMs, signature: sigNueva });
+    }).getLedTransicion("INDEX");
+  }
+}
+
+function loadLED(){
+  const cacheActual = ledCacheRead();
+  const sigCache = cacheActual ? String(cacheActual.signature || "") : "";
+  if (cacheActual) ledRenderSnapshot(cacheActual);
+
+  const logoCache = ledLogoCacheRead();
+  if (logoCache && logoCache.url) setLedBrandLogo(logoCache.url, logoCache.link || "");
+
+  if (typeof google === "undefined" || !google?.script?.run) return;
+
+  google.script.run.withSuccessHandler((data) => {
+    if (!data) return;
+    const payload  = String(data.texto || "");
+    const sigNueva = String(data.signature || "");
+    const { logoUrl, logoLink, restText } = extractLogoFromLedPayload(payload);
+
+    if (logoUrl){ setLedBrandLogo(logoUrl, logoLink); ledLogoCacheWrite({ url: logoUrl, link: logoLink || "", signature: sigNueva }); }
+    else { setLedBrandLogo("", ""); ledLogoCacheWrite({ url: "", link: "", signature: sigNueva }); }
+
+    const finalText = (restText && restText.length) ? restText : payload;
+    if (sigNueva && sigNueva === sigCache) return;
+    try { localStorage.removeItem(LED_CACHE_KEY); } catch(e){}
+    renderLEDFromText(finalText, sigNueva);
+  }).getLedData("INDEX");
+}
+
+// ============================================================
+// DRAWER — idéntico a index.html
+// ============================================================
+function drawerIconFor(label){
+  const n = String(label||"").toUpperCase();
+  if (n.includes("INICIO") || n.includes("TIENDA")) return "🏠";
+  if (n.includes("OFERT")) return "🏷️";
+  if (n.includes("CATEG")) return "🗂️";
+  if (n.includes("CUEN") || n.includes("LOGIN")) return "👤";
+  if (n.includes("CONTACT")) return "☎️";
+  return "➡️";
+}
+
+function renderDrawerList(el, items){
+  if (!el) return;
+  const arr = Array.isArray(items) ? items : [];
+  el.innerHTML = arr.map(it => {
+    const name = escapeHTML(it.nombre || "");
+    const url  = escapeHTML(it.url || "");
+    const ico  = drawerIconFor(it.nombre);
+    return `<a href="#" data-url="${url}" data-name="${name}"><span class="drawer-ico">${ico}</span><span>${name}</span></a>`;
+  }).join("");
+
+  el.querySelectorAll("a").forEach(a => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      let u = forceIngresarUrl(a.getAttribute("data-url") || "");
+      const n = String(a.getAttribute("data-name") || "").toUpperCase().replace(/\s+/g, " ").trim();
+      if (!u){
+        if (n === "CREAR CUENTA" || n === "BOTON CREAR CUENTA") u = normalizeUrl(_ctaUrls.register);
+        if (n === "INGRESAR" || n === "LOGIN") u = forceIngresarUrl(_ctaUrls.login);
+      }
+      if (u) window.top.location.href = u;
+    });
+  });
+}
+
+function setupDrawer(){
+  const btnMenu     = document.getElementById("qaMenu");
+  const btnCart     = document.getElementById("qaCart");
+  const btnMenuDesk = document.getElementById("qaMenuDesk");
+  const btnCartDesk = document.getElementById("qaCartDesk");
+  const overlay     = document.getElementById("drawerOverlay");
+  const drawer      = document.getElementById("appDrawer");
+  const btnClose    = document.getElementById("drawerClose");
+  const pagesEl     = document.getElementById("drawerPages");
+  const catsEl      = document.getElementById("drawerCats");
+  const btnLogin    = document.getElementById("drawerLoginBtn");
+  const btnReg      = document.getElementById("drawerRegisterBtn");
+
+  if (!overlay || !drawer || !btnClose) return;
+
+  const open  = () => { applyAuthUI({ closeDrawer: close }); overlay.classList.add("open"); drawer.classList.add("open"); };
+  const close = () => { overlay.classList.remove("open"); drawer.classList.remove("open"); };
+
+  if (btnMenu)     btnMenu.onclick     = open;
+  if (btnMenuDesk) btnMenuDesk.onclick = open;
+  btnClose.onclick = close;
+  overlay.onclick  = close;
+
+  applyAuthUI({ closeDrawer: close });
+
+  if (btnLogin){ btnLogin.onclick = () => { const u = forceIngresarUrl(_ctaUrls.login); if (u){ close(); window.top.location.href = u; } else close(); }; }
+  if (btnReg){   btnReg.onclick   = () => { const u = normalizeUrl(_ctaUrls.register);  if (u){ close(); window.top.location.href = u; } else close(); }; }
+
+  const onCart = () => { try { close(); } catch(e){}; goToCart(); };
+  if (btnCart)     btnCart.onclick     = onCart;
+  if (btnCartDesk) btnCartDesk.onclick = onCart;
+
+  const navCache = cacheRead(CACHE.nav.key, CACHE.nav.maxAge);
+  if (navCache && Array.isArray(navCache.items)) renderDrawerList(pagesEl, navCache.items);
+
+  if (typeof google !== "undefined" && google?.script?.run){
+    google.script.run.withSuccessHandler((res) => {
+      const items = (res && res.items) ? res.items : [];
+      if (pagesEl) renderDrawerList(pagesEl, items);
+      cacheWrite(CACHE.nav.key, { items, signature: res.signature || "" });
+    }).getPaginasAplicacion();
+
+    const catsCache = cacheRead(CACHE.cats.key, CACHE.cats.maxAge);
+    if (catsCache && Array.isArray(catsCache.items)) renderDrawerList(catsEl, catsCache.items);
+
+    google.script.run.withSuccessHandler((res) => {
+      const items = (res && res.items) ? res.items : [];
+      if (catsEl) renderDrawerList(catsEl, items);
+      cacheWrite(CACHE.cats.key, { items, signature: res.signature || "" });
+    }).getCategoriasAplicacion();
+  }
+
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+}
+
+
+// ============================================================
+// PANTALLA PREPARAR — LED independiente (200px)
+// • Muestra pedidos PENDIENTE con productos (SEGIR PREPARACION)
+// • Botón PREPARADO → envía correo al cliente
+// • Polling cada 5s de firma, refresco completo cada 20s
+// ============================================================
+
+const PREP = {
+  items:         [],   // [{codigo, email, nombre, items:[{nombre,cantidad}]}]
+  idx:           0,
+  dir:           1,
+  timer:         null,
+  pauseUntil:    0,
+  INTERVAL_MS:   4000,
+  REFRESH_MS:    20000,
+  SIG_POLL_MS:   5000,
+  lastSignature: ""
+};
+
+/* ——— helpers ——— */
+function prepEsc(s){
+  return String(s||"").replace(/[&<>"']/g,
+    m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+}
+
+/* ——— Render del track ——— */
+function prepBuildTrack(){
+  const wrap    = document.getElementById("prepWrap");
+  const track   = document.getElementById("prepTrack");
+  const dots    = document.getElementById("prepDots");
+  const counter = document.getElementById("prepCounter");
+  if (!track || !wrap) return;
+
+  const wrapW = wrap.clientWidth || window.innerWidth;
+
+  if (!PREP.items.length){
+    track.style.width     = "";
+    track.style.transform = "translateX(0)";
+    track.innerHTML = `
+      <div class="prep-estado" style="width:${wrapW}px">
+        <div class="prep-estado-icon">✅</div>
+        <div>SIN PEDIDOS PENDIENTES</div>
+      </div>`;
+    if (counter) counter.textContent = "";
+    if (dots)    dots.innerHTML = "";
+    return;
+  }
+
+  const n = PREP.items.length;
+
+  track.innerHTML = PREP.items.map((item, i) => {
+    // Construir líneas de productos a preparar
+    const prodLines = item.items.map(p =>
+      `PREPARAR ${p.cantidad} ${prepEsc(p.nombre.toUpperCase())}`
+    ).join("<br>");
+
+    return `
+      <div class="prep-slide" style="width:${wrapW}px" data-idx="${i}">
+        <div class="prep-inner">
+          <div class="prep-label">🍽️ PEDIDO EN PREPARACIÓN</div>
+          <div class="prep-orden">📋 ${prepEsc(item.codigo)} &nbsp;·&nbsp; 👤 ${prepEsc(item.nombre)}</div>
+          <div class="prep-producto">${prodLines}</div>
+          <button class="prep-btn"
+            data-codigo="${prepEsc(item.codigo)}"
+            data-email="${prepEsc(item.email)}"
+            data-idx="${i}"
+            onclick="prepListo(this)">
+            ✅ PREPARADO
+          </button>
+        </div>
+      </div>`;
+  }).join("");
+
+  track.style.width = (wrapW * n) + "px";
+
+  if (dots){
+    dots.innerHTML = n > 1
+      ? PREP.items.map((_,i) =>
+          `<div class="prep-dot ${i===PREP.idx?"active":""}"></div>`).join("")
+      : "";
+  }
+
+  prepGoto(PREP.idx, false);
+}
+
+function prepGoto(idx, animate){
+  const wrap  = document.getElementById("prepWrap");
+  const track = document.getElementById("prepTrack");
+  if (!track || !PREP.items.length) return;
+
+  const n = PREP.items.length;
+  PREP.idx = ((idx % n) + n) % n;
+  const wrapW  = (wrap ? wrap.clientWidth : window.innerWidth) || window.innerWidth;
+  const offset = PREP.idx * wrapW;
+
+  if (animate === false){
+    track.style.transition = "none";
+    track.style.transform  = `translateX(-${offset}px)`;
+    track.getBoundingClientRect();
+    track.style.transition = "";
+  } else {
+    track.style.transform = `translateX(-${offset}px)`;
+  }
+
+  const dots = document.getElementById("prepDots");
+  if (dots) dots.querySelectorAll(".prep-dot").forEach((d,i) =>
+    d.classList.toggle("active", i === PREP.idx));
+
+  const counter = document.getElementById("prepCounter");
+  if (counter) counter.textContent = n > 1 ? (PREP.idx+1) + " / " + n : "";
+}
+
+/* ——— Autoplay ping-pong ——— */
+function prepStartAutoplay(){
+  if (PREP.timer) clearInterval(PREP.timer);
+  PREP.timer = setInterval(() => {
+    if (Date.now() < PREP.pauseUntil) return;
+    const n = PREP.items.length;
+    if (n <= 1){ prepGoto(0, true); return; }
+    let next = PREP.idx + PREP.dir;
+    if (next >= n){ PREP.dir = -1; next = n - 2; }
+    else if (next < 0){ PREP.dir = 1; next = 1; }
+    prepGoto(next, true);
+  }, PREP.INTERVAL_MS);
+}
+
+/* ——— Navegación manual ——— */
+function prepNext(){
+  PREP.pauseUntil = Date.now() + 8000;
+  const n = PREP.items.length;
+  const next = PREP.idx + 1;
+  PREP.dir = (next >= n) ? -1 : 1;
+  prepGoto(next, true);
+}
+function prepPrev(){
+  PREP.pauseUntil = Date.now() + 8000;
+  const next = PREP.idx - 1;
+  PREP.dir = (next <= 0) ? 1 : -1;
+  prepGoto(next, true);
+}
+
+/* ——— Botón PREPARADO ——— */
+function prepListo(btn){
+  const codigo  = btn.getAttribute("data-codigo");
+  const email   = btn.getAttribute("data-email");
+  const idx     = parseInt(btn.getAttribute("data-idx") || "0", 10);
+  const txtOrig = btn.innerHTML;
+
+  btn.disabled    = true;
+  btn.textContent = "ENVIANDO...";
+
+  if (typeof google === "undefined" || !google?.script?.run){
+    btn.disabled = false; btn.innerHTML = txtOrig; return;
+  }
+
+  google.script.run
+    .withSuccessHandler(res => {
+      if (res && res.ok){
+        // Quitar este ítem localmente y re-renderizar
+        PREP.items.splice(idx, 1);
+        if (PREP.idx >= PREP.items.length) PREP.idx = Math.max(0, PREP.items.length - 1);
+        prepBuildTrack();
+      } else {
+        console.error("prepListo error:", res && res.message);
+        btn.disabled = false; btn.innerHTML = txtOrig;
+      }
+    })
+    .withFailureHandler(err => {
+      console.error("prepListo fallo:", err);
+      btn.disabled = false; btn.innerHTML = txtOrig;
+    })
+    .notificarPedidoListo(codigo, email);
+}
+
+/* ——— Carga desde Sheets ——— */
+function prepCargar(forzar){
+  if (typeof google === "undefined" || !google?.script?.run) return;
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res || !res.ok) return;
+      const nuevaSig = String(res.signature || "");
+      // Siempre renderizar si: forzar=true, o lastSignature vacío (primera carga), o firma cambió
+      if (!forzar && PREP.lastSignature && nuevaSig && nuevaSig === PREP.lastSignature) return;
+      PREP.lastSignature = nuevaSig;
+      PREP.items = Array.isArray(res.items) ? res.items : [];
+      prepBuildTrack();
+    })
+    .withFailureHandler(err => { console.error("prepCargar error:", err); })
+    .getPedidosPreparar();
+}
+
+/* ——— Polling de firma ——— */
+function prepStartPolling(){
+  setInterval(() => {
+    if (typeof google === "undefined" || !google?.script?.run) return;
+    google.script.run
+      .withSuccessHandler(res => {
+        if (!res || !res.ok) return;
+        const sig = String(res.signature || "");
+        // Si lastSignature está vacío es porque aún no cargamos nada → forzar carga
+        if (!PREP.lastSignature || (sig && sig !== PREP.lastSignature)) {
+          prepCargar(true);
+        }
+      })
+      .withFailureHandler(() => {})
+      .getPedidosPrepararSignature();   // ← función ligera, no la pesada
+  }, PREP.SIG_POLL_MS);
+}
+
+function prepMostrarEstado(msg){
+  const wrap  = document.getElementById("prepWrap");
+  const track = document.getElementById("prepTrack");
+  if (!track) return;
+  const w = (wrap ? wrap.clientWidth : window.innerWidth) || window.innerWidth;
+  track.style.width = w + "px";
+  track.style.transform = "translateX(0)";
+  track.innerHTML = `
+    <div class="prep-estado" style="width:${w}px">
+      <div class="prep-estado-icon">⚠️</div>
+      <div>${prepEsc(msg)}</div>
+    </div>`;
+}
+
+/* ——— Init ——— */
+function initPrepWrap(){
+  const btnPrev = document.getElementById("prepPrev");
+  const btnNext = document.getElementById("prepNext");
+  if (btnPrev) btnPrev.onclick = e => { e.preventDefault(); e.stopPropagation(); prepPrev(); };
+  if (btnNext) btnNext.onclick = e => { e.preventDefault(); e.stopPropagation(); prepNext(); };
+
+  // Swipe táctil
+  const wrap = document.getElementById("prepWrap");
+  if (wrap){
+    let startX = 0;
+    wrap.addEventListener("touchstart", e => { startX = e.touches?.[0]?.clientX ?? 0; }, { passive: true });
+    wrap.addEventListener("touchend",   e => {
+      const dx = (e.changedTouches?.[0]?.clientX ?? startX) - startX;
+      if (Math.abs(dx) > 40){ if (dx < 0) prepNext(); else prepPrev(); }
+    }, { passive: true });
+  }
+
+  window.addEventListener("resize", () => { if (PREP.items.length >= 0) prepBuildTrack(); });
+
+  prepCargar(true);
+  prepStartPolling();
+  setInterval(() => prepCargar(false), PREP.REFRESH_MS);
+  prepStartAutoplay();
+}
+
+// ============================================================
+// PANTALLA LED SECUNDARIA — Pedidos en bucle automático
+// • Carga desde getPedidosPanel() cada 20s
+// • Rota automáticamente cada 4s sin importar cuántos pedidos haya
+// • Tarjetas blancas estilo Mis Compras sobre fondo oscuro
+// • Botón "Confirmar" solo en efectivo+pendiente
+// ============================================================
+
+const LP = {
+  pedidos:       [],
+  idx:           0,
+  dir:           1,        // dirección ping-pong: +1 adelante, -1 atrás
+  timer:         null,
+  pauseUntil:    0,
+  INTERVAL_MS:   4000,     // tiempo entre slides (4 segundos)
+  REFRESH_MS:    20000,    // refresco completo de respaldo (20s)
+  SIG_POLL_MS:   5000,     // chequeo de firma cada 5s
+  lastSignature: ""        // última firma MD5 conocida
+};
+
+/* ————— HELPERS ————— */
+function lpEsc(s){
+  return String(s||"").replace(/[&<>"']/g,
+    m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+}
+function lpEsEfectivo(p){
+  return String(p.pago||"").toLowerCase().includes("efectivo");
+}
+function lpFormatTotal(n){
+  const v = Number(n||0);
+  return v ? "$" + v.toLocaleString("es-CL") + " CLP" : "";
+}
+function lpSlideClass(p){
+  if (p.estado === "PENDIENTE" && lpEsEfectivo(p)) return "efectivo";
+  if (p.estado === "PENDIENTE")                    return "pendiente";
+  return "pagado";
+}
+function lpBadgeTxt(p){
+  if (p.estado === "PENDIENTE" && lpEsEfectivo(p)) return "EFECTIVO";
+  if (p.estado === "PENDIENTE")                    return "PENDIENTE";
+  return "PAGADO";
+}
+function lpOrdenar(lista){
+  const a = lista.filter(p => p.estado==="PENDIENTE" &&  lpEsEfectivo(p));
+  const b = lista.filter(p => p.estado==="PENDIENTE" && !lpEsEfectivo(p));
+  const c = lista.filter(p => p.estado==="PAGADO"    || p.estado==="PAGADA");
+  return [...a, ...b, ...c];
+}
+function lpNombre(p){
+  // 1) nombre completo del registro de usuarios (viene de getPedidosPanel via nombreCache)
+  const nom = String(p.nombre || "").trim();
+  if (nom.length > 1) return nom;
+  // 2) parte local del email (antes del @)
+  const emailLocal = String(p.email || "").split("@")[0].trim();
+  if (emailLocal.length > 1) return emailLocal.toUpperCase();
+  // 3) email completo como último recurso
+  const emailCompleto = String(p.email || "").trim();
+  if (emailCompleto.length > 3) return emailCompleto;
+  return "CLIENTE";
+}
+function lpProductosHtml(raw){
+  const items = String(raw||"—")
+    .split(/[,;\n]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+  return items.map(item =>
+    `<div class="lp-card-prod-item"><span class="lp-card-prod-dot"></span>${lpEsc(item)}</div>`
+  ).join("");
+}
+
+/* ————— RENDER ————— */
+function lpBuildTrack(){
+  const wrap    = document.getElementById("lpWrap");
+  const track   = document.getElementById("lpTrack");
+  const counter = document.getElementById("lpCounter");
+  const dots    = document.getElementById("lpDots");
+  if (!track || !wrap) return;
+
+  if (!LP.pedidos.length){
+    track.style.transform = "translateX(0)";
+    track.style.width     = "";
+    track.innerHTML = `
+      <div class="lp-estado" style="width:${wrap.clientWidth||window.innerWidth}px">
+        <div class="lp-estado-icon">📋</div>
+        <div class="lp-estado-text">Sin pedidos registrados</div>
+      </div>`;
+    if (counter) counter.textContent = "";
+    if (dots)    dots.innerHTML = "";
+    return;
+  }
+
+  // Ancho real del contenedor (calculado ANTES de modificar el DOM)
+  const wrapW = wrap.clientWidth || window.innerWidth;
+  const n     = LP.pedidos.length;
+
+  // Construir todos los slides
+  track.innerHTML = LP.pedidos.map((p, i) => {
+    const cls        = lpSlideClass(p);
+    const badge      = lpBadgeTxt(p);
+    const nombre     = lpNombre(p);
+    const total      = lpFormatTotal(p.total);
+    const prods      = lpProductosHtml(p.productos);
+    const pago       = lpEsc(p.pago    || "—");
+    const entrega    = lpEsc(p.entrega || "—");
+    const fecha      = lpEsc(p.fecha   || "");
+    const co         = lpEsc(p.codigo  || "");
+    const iconPago   = lpEsEfectivo(p) ? "💵" : "🏦";
+    const iconEnt    = String(p.entrega||"").toLowerCase().includes("retiro") ? "🏪" : "🚚";
+    const mostrarConfirmar = p.estado === "PENDIENTE" && lpEsEfectivo(p);
+    const mostrarAnular    = p.estado === "PENDIENTE";
+    const mostrarCamino    = p.estado === "PENDIENTE" && String(p.telefono||"").replace(/\D/g,"").length >= 6;
+    const esRetiro         = String(p.entrega||"").toLowerCase().includes("retiro");
+    const txtCamino        = esRetiro ? "📦 Notificar retiro pedido" : "🚚 Notificar entrega pedido";
+    const numOrden   = i + 1; // número correlativo de pedido
+
+    return `
+      <div class="lp-slide" style="width:${wrapW}px" data-idx="${i}">
+        <div class="lp-card ${cls}">
+          <div class="lp-card-header">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="lp-card-num-orden">${numOrden}</div>
+              <div>
+                <div class="lp-card-codigo">📋 ${co}</div>
+                <div class="lp-card-fecha">📅 ${fecha}</div>
+              </div>
+            </div>
+            <span class="lp-card-badge ${cls}">
+              <span class="lp-bdot"></span>${badge}
+            </span>
+          </div>
+          <div class="lp-card-nombre">👤 ${lpEsc(nombre)}</div>
+          <div class="lp-card-productos">${prods}</div>
+          <div class="lp-card-footer">
+            <div class="lp-card-footer-left">
+              <div class="lp-card-total">${total}</div>
+              <div class="lp-card-info">${iconPago} ${pago}<br>${iconEnt} ${entrega}</div>
+            </div>
+          </div>
+          ${(mostrarConfirmar || mostrarAnular || mostrarCamino) ? `
+          <div class="lp-card-botones">
+            ${mostrarConfirmar ? `
+            <button class="lp-btn-confirmar"
+              data-codigo="${co}" data-idx="${i}"
+              onclick="lpConfirmar(this)">
+              🛒 Confirmar
+            </button>` : ""}
+            ${mostrarAnular ? `
+            <button class="lp-btn-anular"
+              data-codigo="${co}" data-idx="${i}"
+              onclick="lpAnular(this)">
+              🗑️ Anular
+            </button>` : ""}
+            ${mostrarCamino ? `
+            <button class="lp-btn-camino"
+              data-tel="${lpEsc(String(p.telefono||""))}"
+              data-nombre="${lpEsc(lpNombre(p))}"
+              data-productos="${lpEsc(String(p.productos||""))}"
+              data-total="${Number(p.total||0)}"
+              onclick="lpEnvioCamino(this)">
+              ${txtCamino}
+            </button>` : ""}
+          </div>` : ""}
+        </div>
+      </div>`;
+  }).join("");
+
+  // El track tiene ancho total = n × wrapW
+  track.style.width = (wrapW * n) + "px";
+
+  // Dots
+  if (dots){
+    dots.innerHTML = n > 1
+      ? LP.pedidos.map((_,i) =>
+          `<div class="lp-dot-ind ${i===LP.idx?"active":""}"></div>`).join("")
+      : "";
+  }
+
+  // Ir al slide actual sin animación
+  lpGoto(LP.idx, false);
+}
+
+function lpGoto(idx, animate){
+  const wrap  = document.getElementById("lpWrap");
+  const track = document.getElementById("lpTrack");
+  if (!track || !LP.pedidos.length) return;
+
+  const n    = LP.pedidos.length;
+  LP.idx     = ((idx % n) + n) % n;
+  const wrapW = (wrap ? wrap.clientWidth : window.innerWidth) || window.innerWidth;
+  const offset = LP.idx * wrapW;
+
+  if (animate === false){
+    track.style.transition = "none";
+    track.style.transform  = `translateX(-${offset}px)`;
+    track.getBoundingClientRect();       // forzar reflow
+    track.style.transition = "";
+  } else {
+    track.style.transform = `translateX(-${offset}px)`;
+  }
+
+  // Dots
+  const dots = document.getElementById("lpDots");
+  if (dots) dots.querySelectorAll(".lp-dot-ind").forEach((d,i) =>
+    d.classList.toggle("active", i === LP.idx));
+
+  // Contador
+  const counter = document.getElementById("lpCounter");
+  if (counter) counter.textContent = n > 1 ? (LP.idx+1) + " / " + n : "";
+}
+
+/* ————— AUTOPLAY — bucle ping-pong: 1→2→3→2→1→2→3→… ————— */
+function lpStartAutoplay(){
+  if (LP.timer) clearInterval(LP.timer);
+  LP.timer = setInterval(() => {
+    if (Date.now() < LP.pauseUntil) return;
+    const n = LP.pedidos.length;
+    if (n <= 1){ lpGoto(0, true); return; }
+
+    // Calcular siguiente índice en modo ping-pong
+    let next = LP.idx + LP.dir;
+    if (next >= n){
+      LP.dir = -1;
+      next = n - 2; // retrocede desde el último
+    } else if (next < 0){
+      LP.dir = 1;
+      next = 1; // avanza desde el primero
+    }
+    lpGoto(next, true);
+  }, LP.INTERVAL_MS);
+}
+
+/* ————— NAVEGACIÓN MANUAL ————— */
+function lpNext(){
+  LP.pauseUntil = Date.now() + 8000;
+  const n = LP.pedidos.length;
+  const next = LP.idx + 1;
+  if (next >= n) { LP.dir = -1; } else { LP.dir = 1; }
+  lpGoto(next, true);
+}
+function lpPrev(){
+  LP.pauseUntil = Date.now() + 8000;
+  const next = LP.idx - 1;
+  if (next <= 0) { LP.dir = 1; } else { LP.dir = -1; }
+  lpGoto(next, true);
+}
+
+/* ————— CONFIRMAR PAGO EFECTIVO ————— */
+function lpConfirmar(btn){
+  const codigo  = btn.getAttribute("data-codigo");
+  const idx     = parseInt(btn.getAttribute("data-idx")||"0", 10);
+  const txtOrig = btn.innerHTML;
+
+  btn.disabled    = true;
+  btn.textContent = "Confirmando…";
+
+  if (typeof google === "undefined" || !google?.script?.run){
+    console.error("Sin conexión con GAS.");
+    btn.disabled = false; btn.innerHTML = txtOrig; return;
+  }
+
+  google.script.run
+    .withSuccessHandler(res => {
+      if (res && res.ok){
+        // ✅ Éxito: ocultar contenedor de botones con fade, luego re-renderizar
+        const contenedor = btn.closest(".lp-card-botones") || btn;
+        contenedor.style.transition = "opacity .35s";
+        contenedor.style.opacity    = "0";
+        setTimeout(() => {
+          if (LP.pedidos[idx]) LP.pedidos[idx].estado = "PAGADO";
+          lpBuildTrack();
+        }, 380);
+      } else {
+        console.error("lpConfirmar error: " + (res?.message || "sin respuesta"));
+        btn.disabled = false; btn.innerHTML = txtOrig;
+      }
+    })
+    .withFailureHandler(err => {
+      console.error("lpConfirmar fallo: " + err);
+      btn.disabled = false; btn.innerHTML = txtOrig;
+    })
+    .marcarPedidoPagadoEfectivo(codigo);
+}
+
+/* ————— TU PEDIDO VA EN CAMINO — abre WhatsApp con mensaje desde Sheets ————— */
+function lpEnvioCamino(btn){
+  const tel           = String(btn.getAttribute("data-tel")||"").replace(/\D/g,"");
+  const nombreCliente = String(btn.getAttribute("data-nombre")||"").trim();
+  const productos     = String(btn.getAttribute("data-productos")||"").trim();
+  const total         = Number(btn.getAttribute("data-total")||0) || 0;
+  const txtOrig       = btn.innerHTML;
+
+  if (!tel){
+    alert("Este cliente no tiene teléfono registrado.");
+    return;
+  }
+
+  btn.disabled    = true;
+  btn.textContent = "Cargando mensaje…";
+
+  if (typeof google === "undefined" || !google?.script?.run){
+    btn.disabled = false; btn.innerHTML = txtOrig; return;
+  }
+
+  const datosPedido = { nombre: nombreCliente, productosTexto: productos, total: total };
+
+  google.script.run
+    .withSuccessHandler(res => {
+      btn.disabled = false; btn.innerHTML = txtOrig;
+      if (!res || !res.ok){ alert("No se pudo obtener el mensaje de la hoja."); return; }
+      const texto = String(res.mensaje || "Tu pedido va en camino 🚀");
+      window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(texto), "_blank");
+    })
+    .withFailureHandler(err => {
+      console.error("lpEnvioCamino error:", err);
+      btn.disabled = false; btn.innerHTML = txtOrig;
+    })
+    .getMensajeWspPedido(datosPedido);
+}
+
+/* ————— ANULAR PEDIDO (solo admin, desde el panel) ————— */
+function lpAnular(btn){
+  const codigo  = btn.getAttribute("data-codigo");
+  const idx     = parseInt(btn.getAttribute("data-idx") || "0", 10);
+  const txtOrig = btn.innerHTML;
+
+  btn.disabled    = true;
+  btn.textContent = "Anulando…";
+
+  // Deshabilitar también el botón Confirmar del mismo slide si existe
+  const slide = btn.closest(".lp-slide");
+  if (slide) {
+    const btnConf = slide.querySelector(".lp-btn-confirmar");
+    if (btnConf) btnConf.disabled = true;
+  }
+
+  if (typeof google === "undefined" || !google?.script?.run){
+    console.error("Sin conexión con GAS.");
+    btn.disabled = false; btn.innerHTML = txtOrig; return;
+  }
+
+  google.script.run
+    .withSuccessHandler(res => {
+      if (res && res.ok){
+        // ✅ Éxito: ocultar contenedor de botones con fade, luego quitar pedido y re-renderizar
+        const contenedor = btn.closest(".lp-card-botones") || btn;
+        contenedor.style.transition = "opacity .35s";
+        contenedor.style.opacity    = "0";
+        setTimeout(() => {
+          LP.pedidos.splice(idx, 1);
+          if (LP.idx >= LP.pedidos.length) LP.idx = Math.max(0, LP.pedidos.length - 1);
+          lpBuildTrack();
+          if (typeof prepCargar === "function") prepCargar(true);
+        }, 380);
+      } else {
+        console.error("lpAnular error: " + (res?.message || "sin respuesta"));
+        btn.disabled = false; btn.innerHTML = txtOrig;
+        if (slide) {
+          const btnConf = slide.querySelector(".lp-btn-confirmar");
+          if (btnConf) btnConf.disabled = false;
+        }
+      }
+    })
+    .withFailureHandler(err => {
+      console.error("lpAnular fallo: " + err);
+      btn.disabled = false; btn.innerHTML = txtOrig;
+      if (slide) {
+        const btnConf = slide.querySelector(".lp-btn-confirmar");
+        if (btnConf) btnConf.disabled = false;
+      }
+    })
+    .anularPedidoAdmin(codigo);
+}
+
+/* ————— CARGA DESDE SHEETS ————— */
+function lpCargarPedidos(forzar){
+  if (typeof google === "undefined" || !google?.script?.run){
+    lpMostrarEstado("Sin conexión con Apps Script");
+    return;
+  }
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res || !res.ok){
+        lpMostrarEstado(res ? (res.message||"Error") : "Sin respuesta");
+        return;
+      }
+      const nuevaSig = String(res.signature || "");
+      // Solo re-renderizar si la firma cambió o se forzó
+      if (!forzar && nuevaSig && nuevaSig === LP.lastSignature) return;
+      LP.lastSignature = nuevaSig;
+      const lista = Array.isArray(res.pedidos) ? res.pedidos : [];
+      LP.pedidos  = lpOrdenar(lista);
+      lpBuildTrack();
+    })
+    .withFailureHandler(err => {
+      console.error("Error cargando pedidos: " + err);
+      if (!LP.pedidos.length) lpMostrarEstado("Error al cargar pedidos");
+    })
+    .getPedidosPanel();
+}
+
+/* ————— POLLING RÁPIDO DE FIRMA — detecta cambios en Sheets ————— */
+function lpStartSignaturePolling(){
+  setInterval(() => {
+    if (typeof google === "undefined" || !google?.script?.run) return;
+    google.script.run
+      .withSuccessHandler(res => {
+        if (!res || !res.ok) return;
+        const nuevaSig = String(res.signature || "");
+        if (nuevaSig && nuevaSig !== LP.lastSignature){
+          // Hubo cambio en la hoja → recargar datos completos
+          lpCargarPedidos(true);
+        }
+      })
+      .withFailureHandler(() => {}) // silencioso
+      .getPedidosPanelSignature();
+  }, LP.SIG_POLL_MS);
+}
+
+function lpMostrarEstado(msg){
+  const wrap  = document.getElementById("lpWrap");
+  const track = document.getElementById("lpTrack");
+  if (!track) return;
+  const w = (wrap ? wrap.clientWidth : window.innerWidth) || window.innerWidth;
+  track.style.width = w + "px";
+  track.style.transform = "translateX(0)";
+  track.innerHTML = `
+    <div class="lp-estado" style="width:${w}px">
+      <div class="lp-estado-icon">⚠️</div>
+      <div class="lp-estado-text">${lpEsc(msg)}</div>
+    </div>`;
+}
+
+/* ————— INIT ————— */
+function initLedPedidos(){
+  const btnPrev = document.getElementById("lpPrev");
+  const btnNext = document.getElementById("lpNext");
+  if (btnPrev) btnPrev.onclick = e => { e.preventDefault(); e.stopPropagation(); lpPrev(); };
+  if (btnNext) btnNext.onclick = e => { e.preventDefault(); e.stopPropagation(); lpNext(); };
+
+  // Swipe táctil
+  const wrap = document.getElementById("lpWrap");
+  if (wrap){
+    let startX = 0;
+    wrap.addEventListener("touchstart", e => {
+      startX = e.touches?.[0]?.clientX ?? 0;
+    }, { passive: true });
+    wrap.addEventListener("touchend", e => {
+      const dx = (e.changedTouches?.[0]?.clientX ?? startX) - startX;
+      if (Math.abs(dx) > 40){ if (dx < 0) lpNext(); else lpPrev(); }
+    }, { passive: true });
+  }
+
+  // Recalcular en resize
+  window.addEventListener("resize", () => {
+    if (LP.pedidos.length >= 0) lpBuildTrack();
+  });
+
+  // Carga inicial forzada
+  lpCargarPedidos(true);
+
+  // Polling rápido de firma (detecta cambios en Sheets cada 5s)
+  lpStartSignaturePolling();
+
+  // Refresco completo de respaldo cada 20s (por si acaso)
+  setInterval(() => lpCargarPedidos(false), LP.REFRESH_MS);
+
+  // Autoplay continuo — siempre corriendo
+  lpStartAutoplay();
+}
+
+// ============================================================
+// MENÚ PLEGABLE — HOJAS DEL SPREADSHEET
+// ============================================================
+const PS = {
+  sig: "",
+  abierto: false
+};
+
+function psRenderHojas(hojas) {
+  const list = document.getElementById("psList");
+  const loading = document.getElementById("psLoading");
+  if (!list) return;
+
+  if (!hojas || !hojas.length) {
+    if (loading) { loading.textContent = "Sin hojas disponibles."; loading.style.display = ""; }
+    list.style.display = "none";
+    return;
+  }
+
+  // Construir HTML sin onclick inline (evita problemas de scope en GAS WebApp)
+  list.innerHTML = hojas.map((nombre, i) =>
+    `<div class="ps-item" role="button" tabindex="0" data-nombre="${nombre.replace(/"/g,'&quot;')}">
+      <span class="ps-item-num">${i + 1}</span>
+      <span class="ps-item-name">${nombre}</span>
+    </div>`
+  ).join("");
+
+  // Agregar listeners después de insertar el HTML
+  list.querySelectorAll(".ps-item").forEach(function(el) {
+    var nombre = el.getAttribute("data-nombre");
+    el.addEventListener("click", function() { seAbrirHoja(nombre); });
+    el.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" || e.key === " ") seAbrirHoja(nombre);
+    });
+  });
+
+  if (loading) loading.style.display = "none";
+}
+
+function psCargar(forzar) {
+  const wrap = document.getElementById("psWrap");
+  if (!wrap) return;
+
+  // Intentar desde cache localStorage primero
+  if (!forzar) {
+    const cached = cacheRead(CACHE.psheets.key, CACHE.psheets.maxAge);
+    if (cached && cached.hojas && cached.signature) {
+      PS.sig = cached.signature;
+      if (!cached.plegableOculto) {
+        wrap.style.display = "";
+        psRenderHojas(cached.hojas);
+      } else {
+        wrap.style.display = "none";
+      }
+      // Verificar en background si cambió la firma
+      psVerificarSignature();
+      return;
+    }
+  }
+
+  if (typeof google === "undefined" || !google?.script?.run) return;
+
+  const _psUserName = (function(){ try { const s = sessionGet(); return (s && s.nombre) ? String(s.nombre) : ""; } catch(e){ return ""; } })();
+
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res || !res.ok) return;
+      const nuevaSig = String(res.signature || "");
+      PS.sig = nuevaSig;
+      cacheWrite(CACHE.psheets.key, { hojas: res.hojas, plegableOculto: res.plegableOculto, signature: nuevaSig });
+
+      if (res.plegableOculto) {
+        wrap.style.display = "none";
+        return;
+      }
+      wrap.style.display = "";
+      psRenderHojas(res.hojas);
+    })
+    .withFailureHandler(err => {
+      console.error("psCargar error: " + err);
+    })
+    .getPanelSheets(_psUserName);
+}
+
+function psVerificarSignature() {
+  if (typeof google === "undefined" || !google?.script?.run) return;
+  const _psUserName2 = (function(){ try { const s = sessionGet(); return (s && s.nombre) ? String(s.nombre) : ""; } catch(e){ return ""; } })();
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res || !res.ok) return;
+      const nuevaSig = String(res.signature || "");
+      if (nuevaSig && nuevaSig !== PS.sig) {
+        psCargar(true); // cambió — recargar datos frescos
+      }
+    })
+    .withFailureHandler(() => {})
+    .getPanelSheets(_psUserName2); // devuelve signature siempre, es ligera por cache
+}
+
+function psSetupToggle() {
+  const btn = document.getElementById("psToggle");
+  const panel = document.getElementById("psPanel");
+  if (!btn || !panel) return;
+
+  btn.addEventListener("click", () => {
+    PS.abierto = !PS.abierto;
+    btn.classList.toggle("open", PS.abierto);
+    panel.classList.toggle("open", PS.abierto);
+    btn.setAttribute("aria-expanded", String(PS.abierto));
+  });
+}
+
+// Refresco de firma cada 30s (detecta cambios en PAGINAS APLICACION)
+function psStartPolling() {
+  setInterval(psVerificarSignature, 30000);
+}
+
+
+
+// ============================================================
+// PANTALLA GAMEBOY — Editor de hojas (estilo index.html)
+// ============================================================
+
+const GB = {
+  nombre: "",
+  numCols: 0,
+  saving: false
+};
+
+/* Utilidades */
+function gbEsc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g,"&amp;").replace(/"/g,"&quot;")
+    .replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function gbLetra(i) {
+  var s="",n=i;
+  do{s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26)-1;}while(n>=0);
+  return s;
+}
+
+/* Abrir la pantalla Gameboy con la hoja solicitada */
+function seAbrirHoja(nombre) {
+  var ov = document.getElementById("gbOverlay");
+  if (!ov) { console.error("gbOverlay no encontrado"); return; }
+
+  // Título
+  document.getElementById("gbTitle").textContent = nombre;
+  // Reset mensaje y botón
+  var msg = document.getElementById("gbMsg");
+  var btn = document.getElementById("gbBtnSave");
+  msg.textContent = "";
+  msg.className = "";
+  btn.disabled = false;
+  btn.textContent = "💾 GUARDAR CAMBIOS";
+
+  // Mostrar spinner dentro de la pantalla Gameboy
+  document.getElementById("gbScreen").innerHTML =
+    '<div id="gbSpinner"><div class="gb-spin-ring"></div>⏳ CARGANDO HOJA…</div>';
+
+  // Estado interno
+  GB.nombre  = nombre;
+  GB.numCols = 0;
+  GB.saving  = false;
+
+  // Mostrar overlay
+  ov.classList.add("open");
+  document.body.style.overflow = "hidden";
+
+  // Llamar al backend (misma función que index.html)
+  if (typeof google === "undefined" || !google?.script?.run) {
+    document.getElementById("gbScreen").innerHTML =
+      '<div style="padding:40px;text-align:center;color:#ef4444;font-size:15px;">❌ Sin conexión con Apps Script</div>';
+    return;
+  }
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res || !res.ok) {
+        document.getElementById("gbScreen").innerHTML =
+          '<div style="padding:40px;text-align:center;color:#112b38;font-size:15px;font-weight:700;">❌ ' +
+          gbEsc(res ? res.message || "Error del servidor" : "Sin respuesta") + '</div>';
+        return;
+      }
+      gbRenderTabla(res.rows, res.numCols);
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById("gbScreen").innerHTML =
+        '<div style="padding:40px;text-align:center;color:#112b38;font-size:15px;font-weight:700;">❌ ' + gbEsc(String(err)) + '</div>';
+    })
+    .getSheetData(nombre);
+}
+
+/* Renderizar la tabla con look Gameboy */
+function gbRenderTabla(filas, numCols) {
+  numCols = numCols || (filas && filas[0] ? filas[0].length : 1);
+  GB.numCols = numCols;
+  var F = filas || [];
+
+  var h = '<table id="gbTable"><thead><tr>';
+  h += '<th class="gb-rn">#</th>';
+  for (var c = 0; c < numCols; c++) {
+    h += '<th>' + gbLetra(c) + '</th>';
+  }
+  h += '</tr></thead><tbody>';
+  for (var r = 0; r < F.length; r++) {
+    h += '<tr>';
+    h += '<td class="gb-rn">' + (r + 1) + '</td>';
+    for (var cc = 0; cc < numCols; cc++) {
+      var v = (F[r] && F[r][cc] != null) ? String(F[r][cc]) : "";
+      h += '<td><input type="text" value="' + gbEsc(v) + '" data-r="' + r + '" data-c="' + cc + '"></td>';
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table>';
+
+  document.getElementById("gbScreen").innerHTML = h;
+
+  // Actualizar contador de filas
+  var rc = document.getElementById("gbRowCount");
+  if (rc) rc.textContent = F.length + " filas";
+}
+
+/* Recolectar datos editados */
+function gbRecolectar() {
+  var inputs = document.querySelectorAll("#gbTable tbody input");
+  var filas = [];
+  inputs.forEach(function(inp) {
+    var r = parseInt(inp.getAttribute("data-r"), 10);
+    var c = parseInt(inp.getAttribute("data-c"), 10);
+    if (!filas[r]) filas[r] = [];
+    filas[r][c] = inp.value;
+  });
+  return filas;
+}
+
+/* Agregar fila nueva */
+function gbAgregarFila() {
+  var tbody = document.querySelector("#gbTable tbody");
+  if (!tbody) return;
+  var ri = tbody.rows.length;
+  var nc = GB.numCols || 1;
+  var tr = document.createElement("tr");
+  var h = '<td class="gb-rn">' + (ri + 1) + '</td>';
+  for (var ci = 0; ci < nc; ci++) {
+    h += '<td><input type="text" value="" data-r="' + ri + '" data-c="' + ci + '"></td>';
+  }
+  tr.innerHTML = h;
+  tbody.appendChild(tr);
+  tr.querySelector("input").focus();
+  var rc = document.getElementById("gbRowCount");
+  if (rc) rc.textContent = (ri + 1) + " filas";
+}
+
+/* Guardar cambios */
+function gbGuardar() {
+  if (GB.saving) return;
+  GB.saving = true;
+  var btn = document.getElementById("gbBtnSave");
+  var msg = document.getElementById("gbMsg");
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+  msg.textContent = "";
+  msg.className = "";
+
+  if (typeof google === "undefined" || !google?.script?.run) {
+    GB.saving = false;
+    btn.disabled = false;
+    btn.textContent = "💾 GUARDAR CAMBIOS";
+    msg.textContent = "❌ Sin conexión con Apps Script";
+    msg.className = "err";
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      GB.saving = false;
+      btn.disabled = false;
+      btn.textContent = "💾 GUARDAR CAMBIOS";
+      if (res && res.ok) {
+        msg.textContent = "✅ ¡Guardado!";
+        msg.className = "ok";
+        setTimeout(function() { msg.textContent = ""; msg.className = ""; }, 4000);
+      } else {
+        msg.textContent = "❌ " + (res ? res.message || "Error" : "Sin respuesta");
+        msg.className = "err";
+      }
+    })
+    .withFailureHandler(function(err) {
+      GB.saving = false;
+      btn.disabled = false;
+      btn.textContent = "💾 GUARDAR CAMBIOS";
+      msg.textContent = "❌ " + String(err);
+      msg.className = "err";
+    })
+    .saveSheetData(GB.nombre, gbRecolectar());
+}
+
+/* Cerrar la pantalla Gameboy */
+function gbCerrar() {
+  var ov = document.getElementById("gbOverlay");
+  if (ov) ov.classList.remove("open");
+  document.body.style.overflow = "";
+  GB.nombre  = "";
+  GB.saving  = false;
+}
+
+/* Cerrar con tecla Escape */
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    var ov = document.getElementById("gbOverlay");
+    if (ov && ov.classList.contains("open")) gbCerrar();
+  }
+});
+
+
+// ============================================================
+// BLOQUE ENVIAR FLYER
+// ============================================================
+(function() {
+
+  function flayerCargarImagen() {
+    var img   = document.getElementById("flayerImg");
+    var placeholder = document.getElementById("flayerImgPlaceholder");
+    if (!img || !placeholder) return;
+
+    if (typeof google === "undefined" || !google.script || !google.script.run) return;
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res && res.ok && res.url) {
+          img.src = res.url;
+          img.style.display = "block";
+          placeholder.style.display = "none";
+        } else {
+          placeholder.textContent = "No se encontro el flyer. Revisa la hoja FLAYER celda A2.";
+        }
+      })
+      .withFailureHandler(function() {
+        placeholder.textContent = "Error al cargar el flyer.";
+      })
+      .getFlayerUrl();
+  }
+
+  // ✅ Exponer al scope global para que el botón DESPLEGAR pueda llamarla
+  window.flayerCargarImagen = flayerCargarImagen;
+
+  function flayerEnviar() {
+    var textarea = document.getElementById("flayerEmails");
+    var btn      = document.getElementById("flayerBtnEnviar");
+    var btnTxt   = document.getElementById("flayerBtnTxt");
+    var btnIcon  = document.getElementById("flayerBtnIcon");
+    var msg      = document.getElementById("flayerMsg");
+
+    if (!textarea || !btn || !msg) return;
+
+    var emails = textarea.value.trim();
+    if (!emails) {
+      msg.className = "err";
+      msg.textContent = "⚠️ Ingresa al menos un correo.";
+      msg.style.display = "block";
+      return;
+    }
+
+    btn.disabled  = true;
+    btnTxt.textContent = "ENVIANDO…";
+    btnIcon.textContent = "⏳";
+    msg.style.display = "none";
+
+    if (typeof google === "undefined" || !google.script || !google.script.run) {
+      btn.disabled = false;
+      btnTxt.textContent = "ENVIAR FLYER";
+      btnIcon.textContent = "📤";
+      msg.className = "err";
+      msg.textContent = "Error: No se puede conectar con el servidor.";
+      msg.style.display = "block";
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btnTxt.textContent = "ENVIAR FLYER";
+        btnIcon.textContent = "📤";
+        if (res && res.ok) {
+          var n = res.enviados ? res.enviados.length : 0;
+          var errN = res.errores ? res.errores.length : 0;
+          var txt = "✅ Flyer enviado a " + n + " correo" + (n !== 1 ? "s" : "") + ".";
+          if (errN > 0) txt += "  ⚠️ " + errN + " no pudo(ron) enviarse.";
+          msg.className = "ok";
+          msg.textContent = txt;
+          textarea.value = "";
+        } else {
+          msg.className = "err";
+          msg.textContent = "❌ " + (res && res.error ? res.error : "Error desconocido.");
+        }
+        msg.style.display = "block";
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btnTxt.textContent = "ENVIAR FLYER";
+        btnIcon.textContent = "📤";
+        msg.className = "err";
+        msg.textContent = "❌ Error de conexion: " + (err || "");
+        msg.style.display = "block";
+      })
+      .enviarFlayer(emails);
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    // ✅ Ya NO se carga la imagen automáticamente al inicio.
+    //    Se carga la primera vez que el usuario pincha "DESPLEGAR FLAYER".
+    var btn = document.getElementById("flayerBtnEnviar");
+    if (btn) btn.addEventListener("click", flayerEnviar);
+  });
+
+})();
+
+document.addEventListener("DOMContentLoaded", () => {
+  _loadLedTransicion();
+  loadLED();
+  setupDrawer();
+  applyAuthUI();
+  refreshCartBadge();
+  initPrepWrap();       // ✅ Pantalla PREPARAR
+  initLedPedidos();
+  psSetupToggle();
+  psCargar(false);
+  psStartPolling();
+
+  // ── Botón DESPLEGAR / ESCONDER FLAYER ──
+  var btnFlayer  = document.getElementById("btnDesplegarFlayer");
+  var flayerWrap = document.getElementById("flayerWrap");
+  var flayerCargado = false;
+
+  if (btnFlayer && flayerWrap) {
+    btnFlayer.addEventListener("click", function() {
+      var visible = flayerWrap.style.display !== "none";
+      if (visible) {
+        flayerWrap.style.display = "none";
+        btnFlayer.textContent = "📲 DESPLEGAR FLAYER";
+      } else {
+        flayerWrap.style.display = "";
+        btnFlayer.textContent = "📲 ESCONDER FLAYER";
+        // Cargar la imagen del flyer solo la primera vez que se despliega
+        if (!flayerCargado) {
+          flayerCargado = true;
+          if (typeof flayerCargarImagen === "function") flayerCargarImagen();
+        }
+      }
+    });
+  }
+
+  // ── Pantalla Gameboy: conectar botones ──
+  var gbOverlay = document.getElementById("gbOverlay");
+  var gbBtnClose = document.getElementById("gbBtnClose");
+  var gbBtnSave  = document.getElementById("gbBtnSave");
+  var gbBtnAdd   = document.getElementById("gbBtnAdd");
+
+  if (gbOverlay)  gbOverlay.addEventListener("click", function(e) { if (e.target === gbOverlay) gbCerrar(); });
+  if (gbBtnClose) gbBtnClose.addEventListener("click", gbCerrar);
+  if (gbBtnSave)  gbBtnSave.addEventListener("click",  gbGuardar);
+  if (gbBtnAdd)   gbBtnAdd.addEventListener("click",   gbAgregarFila);
+
+  // ── Menú GESTIÓN DE CATEGORÍAS ──
+  initCatGestion();
+});
+
+// ============================================================
+// GESTIÓN DE CATEGORÍAS (AGREGAR / ELIMINAR)
+// ============================================================
+function initCatGestion() {
+  var toggle       = document.getElementById("catGestionToggle");
+  var panel        = document.getElementById("catGestionPanel");
+  var accion       = document.getElementById("catGestionAccion");
+  var opAgregar    = document.getElementById("cgOpcionAgregar");
+  var opEliminar   = document.getElementById("cgOpcionEliminar");
+  var divAgregar   = document.getElementById("cgAccionAgregar");
+  var divEliminar  = document.getElementById("cgAccionEliminar");
+  var inputNombre  = document.getElementById("catNombreInput");
+  var selectElim   = document.getElementById("catEliminarSelect");
+  var btnAgregar   = document.getElementById("cgBtnAgregar");
+  var btnEliminar  = document.getElementById("cgBtnEliminar");
+  var msg          = document.getElementById("catGestionMsg");
+
+  if (!toggle || !panel) return;
+
+  var opcionActiva = null; // "agregar" | "eliminar" | null
+  var eliminListaCargada = false;
+
+  // ── Abrir/cerrar el panel principal ──
+  toggle.addEventListener("click", function() {
+    var abierto = panel.classList.contains("open");
+    if (abierto) {
+      panel.classList.remove("open");
+      toggle.classList.remove("open");
+      toggle.setAttribute("aria-expanded", "false");
+      accion.classList.remove("visible");
+      opcionActiva = null;
+      opAgregar.classList.remove("activa");
+      opEliminar.classList.remove("activa");
+    } else {
+      panel.classList.add("open");
+      toggle.classList.add("open");
+      toggle.setAttribute("aria-expanded", "true");
+    }
+  });
+
+  // ── Función para mostrar el área de acción ──
+  function mostrarAccion(cual) {
+    opcionActiva = cual;
+    cgMostrarMsg("", "");
+
+    opAgregar.classList.toggle("activa",  cual === "agregar");
+    opEliminar.classList.toggle("activa", cual === "eliminar");
+
+    // Cerrar el panel de opciones
+    panel.classList.remove("open");
+    toggle.classList.remove("open");
+    toggle.setAttribute("aria-expanded", "false");
+
+    divAgregar.style.display  = cual === "agregar"  ? "" : "none";
+    divEliminar.style.display = cual === "eliminar" ? "" : "none";
+    accion.classList.add("visible");
+
+    // Si eligió eliminar, cargar la lista de categorías una sola vez
+    if (cual === "eliminar" && !eliminListaCargada) {
+      cgCargarListaEliminar();
+    }
+  }
+
+  opAgregar.addEventListener("click",  function() { mostrarAccion("agregar"); });
+  opEliminar.addEventListener("click", function() { mostrarAccion("eliminar"); });
+
+  // ── Función para mostrar mensajes ──
+  function cgMostrarMsg(texto, tipo) {
+    msg.textContent = texto;
+    msg.className   = tipo || "";
+    msg.style.display = texto ? "block" : "none";
+  }
+
+  // ── Cargar lista de hojas con sello (CATALOGO) para el select ──
+  function cgCargarListaEliminar() {
+    selectElim.innerHTML = '<option value="">— Cargando categorías… —</option>';
+    btnEliminar.disabled = true;
+
+    if (typeof google === "undefined" || !google.script || !google.script.run) {
+      selectElim.innerHTML = '<option value="">— Sin conexión —</option>';
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        eliminListaCargada = true;
+        if (!res || !res.ok || !res.categorias || res.categorias.length === 0) {
+          selectElim.innerHTML = '<option value="">— Sin categorías con sello (CATALOGO) —</option>';
+          return;
+        }
+        selectElim.innerHTML = '<option value="">— Selecciona una categoría —</option>' +
+          res.categorias.map(function(c) {
+            return '<option value="' + cgEsc(c.nombreReal) + '">' + cgEsc(c.nombreLimpio) + '</option>';
+          }).join("");
+        btnEliminar.disabled = false;
+      })
+      .withFailureHandler(function(err) {
+        selectElim.innerHTML = '<option value="">— Error al cargar —</option>';
+        cgMostrarMsg("❌ Error al cargar categorías: " + String(err), "err");
+      })
+      .getHojasCatalogo();
+  }
+
+  // ── AGREGAR ──
+  btnAgregar.addEventListener("click", function() {
+    var nombre = (inputNombre.value || "").trim().toUpperCase()
+                   .replace(/[\\\/\?\*\[\]\:]/g, "")
+                   .replace(/\s+/g, " ").trim();
+
+    if (!nombre) {
+      cgMostrarMsg("⚠️ Escribe el nombre de la nueva categoría.", "err");
+      inputNombre.focus();
+      return;
+    }
+
+    btnAgregar.disabled = true;
+    btnAgregar.textContent = "⏳ Creando…";
+    cgMostrarMsg("", "");
+
+    if (typeof google === "undefined" || !google.script || !google.script.run) {
+      btnAgregar.disabled = false;
+      btnAgregar.textContent = "➕ AGREGAR CATEGORÍA";
+      cgMostrarMsg("❌ Sin conexión con el servidor.", "err");
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btnAgregar.disabled = false;
+        btnAgregar.textContent = "➕ AGREGAR CATEGORÍA";
+        if (res && res.ok) {
+          cgMostrarMsg("✅ Categoría «" + nombre + "» creada correctamente. Hoja: " + res.hojaCreada, "ok");
+          inputNombre.value = "";
+          // Resetear la lista de eliminar para que se recargue la próxima vez
+          eliminListaCargada = false;
+        } else {
+          cgMostrarMsg("❌ " + (res && res.message ? res.message : "Error desconocido."), "err");
+        }
+      })
+      .withFailureHandler(function(err) {
+        btnAgregar.disabled = false;
+        btnAgregar.textContent = "➕ AGREGAR CATEGORÍA";
+        cgMostrarMsg("❌ Error de conexión: " + String(err), "err");
+      })
+      .agregarCategoriaCatalogo(nombre);
+  });
+
+  // ── ELIMINAR ──
+  btnEliminar.addEventListener("click", function() {
+    var nombreReal = selectElim.value;
+    if (!nombreReal) {
+      cgMostrarMsg("⚠️ Selecciona una categoría para eliminar.", "err");
+      return;
+    }
+
+    var nombreMostrar = selectElim.options[selectElim.selectedIndex].text;
+    if (!confirm("¿Eliminar definitivamente la categoría «" + nombreMostrar + "»?\n\nEsta acción no se puede deshacer.")) return;
+
+    btnEliminar.disabled = true;
+    btnEliminar.textContent = "⏳ Eliminando…";
+    cgMostrarMsg("", "");
+
+    if (typeof google === "undefined" || !google.script || !google.script.run) {
+      btnEliminar.disabled = false;
+      btnEliminar.textContent = "🗑️ ELIMINAR CATEGORÍA";
+      cgMostrarMsg("❌ Sin conexión con el servidor.", "err");
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btnEliminar.disabled = false;
+        btnEliminar.textContent = "🗑️ ELIMINAR CATEGORÍA";
+        if (res && res.ok) {
+          cgMostrarMsg("✅ Categoría «" + nombreMostrar + "» eliminada correctamente.", "ok");
+          // Recargar la lista
+          eliminListaCargada = false;
+          cgCargarListaEliminar();
+        } else {
+          cgMostrarMsg("❌ " + (res && res.message ? res.message : "Error desconocido."), "err");
+        }
+      })
+      .withFailureHandler(function(err) {
+        btnEliminar.disabled = false;
+        btnEliminar.textContent = "🗑️ ELIMINAR CATEGORÍA";
+        cgMostrarMsg("❌ Error de conexión: " + String(err), "err");
+      })
+      .eliminarCategoriaCatalogo(nombreReal);
+  });
+
+  // Helper para escapar texto en HTML
+  function cgEsc(s) {
+    return String(s || "")
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+  }
+}
+
+  </script>
+<!-- ============================================================
+     PANTALLA GAMEBOY — Editor de hojas (estilo index.html)
+     Panel de Control / DELICIAS FEDDE
+     ============================================================ -->
+<div id="gbOverlay">
+
+  <div id="gbPanel">
+
+    <!-- ── BARRA SUPERIOR ── -->
+    <div id="gbTopBar">
+      <button id="gbBtnClose" title="Cerrar">✕</button>
+      <span id="gbTitleIcon">📊</span>
+      <div id="gbTitle"></div>
+      <span id="gbMsg"></span>
+      <button id="gbBtnSave">💾 GUARDAR CAMBIOS</button>
+    </div>
+
+    <!-- ── PANTALLA GAMEBOY (área de la tabla) ── -->
+    <div id="gbScreen">
+      <div id="gbSpinner">
+        <div class="gb-spin-ring"></div>
+        ⏳ CARGANDO HOJA…
+      </div>
+    </div>
+
+    <!-- ── BARRA INFERIOR ── -->
+    <div id="gbBottomBar">
+      <button id="gbBtnAdd">＋ Agregar fila</button>
+      <span id="gbRowCount"></span>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
