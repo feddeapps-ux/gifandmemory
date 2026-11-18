@@ -292,46 +292,84 @@
     googleFlujo(b.id === "btnGoogleLogin" ? "ingrezar" : "crearcuenta", b);
   }, true);
 
-  /* ───────── Instalación (botón "Instalar") ───────── */
+  /* ───────── Instalación: banner superior "Instalar" (mismo estilo que Mi EquiFinanciero) ───────── */
   var standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
-  var ev = null, btn = null;
-  var esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  var ev = null, ban = null, banTxt = null, banBtn = null;
+  var ua = navigator.userAgent;
+  var esIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var esAndroid = /android/i.test(ua);
+  // Navegadores dentro de otras apps (Google Lens / app de Google, Instagram, Facebook, WebView): ahí NO se puede instalar
+  var enOtraApp = esAndroid && /; wv\)|GSA\/|Instagram|FBAN|FBAV|Line\/|Snapchat|TikTok/i.test(ua);
+  var modoBtn = "ayuda"; // "prompt" | "chrome" | "ayuda"
 
-  function crearBoton() {
-    if (btn || standalone) return;
-    btn = document.createElement("button");
-    btn.id = "pwaInstalar"; btn.type = "button";
-    btn.innerHTML = '<span style="font-size:15px;line-height:1">⬇</span> Instalar';
-    btn.style.cssText = "position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:10px;z-index:2147483000;" +
-      "display:none;align-items:center;gap:6px;padding:8px 14px;border:0;border-radius:999px;cursor:pointer;" +
-      "font:700 13px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#fff;" +
-      "background:linear-gradient(135deg,#a02fd8,#f0287f);box-shadow:0 4px 14px rgba(0,0,0,.35);";
-    btn.addEventListener("click", instalar);
+  function cuandoBody(fn) { if (document.body) fn(); else setTimeout(function () { cuandoBody(fn); }, 40); }
+  function escalarBanner() {
+    if (!ban) return;
     var k = escalaUI();
-    if (k > 1.01) { btn.style.transformOrigin = "top right"; btn.style.transform = "scale(" + k + ")"; btn.style.top = "calc(env(safe-area-inset-top,0px) + " + (8 * k) + "px)"; btn.style.right = (10 * k) + "px"; }
-    document.body.appendChild(btn);
+    ban.style.width = (100 / k) + "%";
+    ban.style.transform = k > 1.01 ? "scale(" + k + ")" : "none";
   }
-  function mostrar() { crearBoton(); if (btn) btn.style.display = "inline-flex"; }
-  function ocultar() { if (btn) btn.style.display = "none"; }
+  function crearBanner() {
+    if (ban || standalone) return;
+    ban = document.createElement("div");
+    ban.id = "pwaBanner";
+    ban.style.cssText = "position:fixed;top:0;left:0;z-index:2147483647;box-sizing:border-box;display:none;align-items:center;gap:10px;" +
+      "padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 8px;transform-origin:top left;" +
+      "background:#15072b;border-bottom:2px solid #a855f7;box-shadow:0 4px 18px rgba(0,0,0,.45);" +
+      "font:400 14px/1.3 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#eadcff;";
+    var img = document.createElement("img");
+    img.src = (window.PWA_BASE || "./") + "icon-192.png"; img.alt = "";
+    img.style.cssText = "width:38px;height:38px;border-radius:10px;flex:none;";
+    banTxt = document.createElement("span");
+    banTxt.style.cssText = "flex:1;min-width:0;";
+    banBtn = document.createElement("button");
+    banBtn.id = "pwaInstalar"; banBtn.type = "button"; banBtn.textContent = "Instalar";
+    banBtn.style.cssText = "flex:none;border:0;border-radius:12px;padding:10px 16px;cursor:pointer;color:#fff;" +
+      "font:700 15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(135deg,#a02fd8,#f0287f);";
+    banBtn.addEventListener("click", instalar);
+    var x = document.createElement("button");
+    x.type = "button"; x.setAttribute("aria-label", "Cerrar"); x.textContent = "×";
+    x.style.cssText = "flex:none;width:36px;height:36px;border:0;border-radius:50%;cursor:pointer;background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;";
+    x.addEventListener("click", function () { ocultar(); try { sessionStorage.setItem("gmBan", "1"); } catch (e) {} });
+    ban.appendChild(img); ban.appendChild(banTxt); ban.appendChild(banBtn); ban.appendChild(x);
+    document.body.appendChild(ban);
+    escalarBanner();
+  }
+  function pintar() {
+    if (!banTxt) return;
+    if (ev) { modoBtn = "prompt"; banTxt.innerHTML = "<b style=\"color:#fff\">Instala GIF and Memory</b> en tu teléfono y ábrela como una app."; banBtn.textContent = "Instalar"; banBtn.style.display = ""; }
+    else if (esIOS) { modoBtn = "ayuda"; banTxt.innerHTML = "<b style=\"color:#fff\">Instala GIF and Memory</b>: toca Compartir y «Agregar a pantalla de inicio»."; banBtn.style.display = "none"; }
+    else if (enOtraApp) { modoBtn = "chrome"; banTxt.innerHTML = "<b style=\"color:#fff\">Instala GIF and Memory</b>: ábrela en Chrome para instalarla."; banBtn.textContent = "Abrir en Chrome"; banBtn.style.display = ""; }
+    else { modoBtn = "ayuda"; banTxt.innerHTML = "<b style=\"color:#fff\">Instala la app</b>: menú ⋮ → «Instalar aplicación»."; banBtn.textContent = "Instalar"; banBtn.style.display = ""; }
+  }
+  function mostrar() {
+    if (standalone) return;
+    try { if (sessionStorage.getItem("gmBan")) return; } catch (e) {}
+    cuandoBody(function () { crearBanner(); pintar(); if (ban) ban.style.display = "flex"; });
+  }
+  function ocultar() { if (ban) ban.style.display = "none"; }
   function instalar() {
-    if (ev) {
+    if (modoBtn === "prompt" && ev) {
       ev.prompt();
-      ev.userChoice.then(function (c) { if (c && c.outcome === "accepted") ocultar(); ev = null; });
+      ev.userChoice.then(function (c) { if (c && c.outcome === "accepted") ocultar(); ev = null; pintar(); });
+    } else if (modoBtn === "chrome") {
+      location.href = "intent://" + location.host + location.pathname + location.search + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(location.href) + ";end";
     } else if (esIOS) {
       alert("Para instalar: toca el botón Compartir (⬆) de Safari y elige «Agregar a pantalla de inicio».");
     } else {
       alert("Para instalar: abre el menú del navegador (⋮) y elige «Instalar aplicación» o «Agregar a pantalla de inicio».");
     }
   }
-  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); ev = e; if (document.body) mostrar(); else document.addEventListener("DOMContentLoaded", mostrar); });
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); ev = e; mostrar(); });
   window.addEventListener("appinstalled", function () { ocultar(); ev = null; });
-  document.addEventListener("DOMContentLoaded", function () {
-    if (standalone) return;
-    // iPhone no avisa: se muestra el botón con las instrucciones
-    if (esIOS) mostrar();
-    // Otros navegadores: si pasados unos segundos no hubo aviso, igual se ofrece el botón
-    setTimeout(function () { if (!btn || btn.style.display === "none") mostrar(); }, 2500);
-  });
+  window.addEventListener("resize", escalarBanner);
+  document.addEventListener("DOMContentLoaded", escalarBanner);
+  if (!standalone) {
+    // iPhone y navegadores dentro de otras apps no avisan: el banner sale altiro con las instrucciones
+    if (esIOS || enOtraApp) mostrar();
+    // Resto: si en 2,5 s no llegó el aviso de Chrome, igual se muestra el banner
+    setTimeout(function () { if (!ban || ban.style.display === "none") mostrar(); }, 2500);
+  }
 
   /* Ventana tamaño celular al abrir la app instalada en computador */
   if (standalone && C.VENTANA_ESCRITORIO && !/android|iphone|ipad|ipod/i.test(navigator.userAgent)) {
